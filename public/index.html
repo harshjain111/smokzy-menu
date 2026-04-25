@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Smokzy — The Art of Shisha</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/menu.css">
+</head>
+<body>
+  <!-- soft ambient background -->
+  <div class="ambient"></div>
+
+  <!-- the book -->
+  <main id="book" class="book" aria-label="Smokzy menu book"></main>
+
+  <!-- footer hint -->
+  <div class="hint" id="hint">Tap a page edge to turn  ·  Tap a flavor to reveal its story</div>
+
+  <!-- bottom nav -->
+  <nav class="bookNav">
+    <button id="prevBtn" class="navBtn" aria-label="Previous page">‹</button>
+    <span id="pageLabel" class="pageLabel">—</span>
+    <button id="nextBtn" class="navBtn" aria-label="Next page">›</button>
+  </nav>
+
+  <!-- flavor detail modal -->
+  <div id="flavorModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="document">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <div class="modal-body" id="flavorModalBody"></div>
+    </div>
+  </div>
+
+  <script src="/js/menu.js"></script>
+</body>
+</html>

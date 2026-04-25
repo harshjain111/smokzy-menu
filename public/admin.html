@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smokzy Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="loginScreen" class="login">
+    <div class="login-card">
+      <div class="brand">SMOKZY <span>· admin</span></div>
+      <h1>Welcome back</h1>
+      <p>Enter the admin password to manage your menu.</p>
+      <form id="loginForm">
+        <input type="password" id="loginPw" placeholder="Admin password" autocomplete="current-password" required>
+        <button type="submit">Sign in</button>
+        <div class="err" id="loginErr"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADMIN UI -->
+  <div id="adminApp" class="adminApp" hidden>
+    <header class="topbar">
+      <div class="brand">SMOKZY <span>· admin</span></div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="dashboard">Dashboard</button>
+        <button class="tab" data-tab="branding">Branding</button>
+        <button class="tab" data-tab="cover">Cover & Founder</button>
+        <button class="tab" data-tab="pots">Pots & Flavors</button>
+        <button class="tab" data-tab="pairings">Pairings</button>
+        <button class="tab" data-tab="feedback">Feedback</button>
+      </nav>
+      <div class="topbar-right">
+        <a href="/" target="_blank" class="ghost-btn">View menu ↗</a>
+        <button id="logoutBtn" class="ghost-btn">Logout</button>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- DASHBOARD -->
+      <section class="panel" data-panel="dashboard">
+        <h2>Dashboard</h2>
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-label">Total menu views</div><div class="kpi-value" id="kpiViews">—</div></div>
+          <div class="kpi"><div class="kpi-label">Unique visitors</div><div class="kpi-value" id="kpiVisitors">—</div></div>
+          <div class="kpi"><div class="kpi-label">Feedback received</div><div class="kpi-value" id="kpiFeedback">—</div></div>
+          <div class="kpi"><div class="kpi-label">Most active hour</div><div class="kpi-value" id="kpiPeak">—</div></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>Hourly traffic heatmap</h3>
+            <p class="muted">When customers actually open the menu (24-hour clock).</p>
+            <div id="heatmap" class="heatmap"></div>
+            <div class="legend">
+              <span>Quiet</span>
+              <div class="legend-bar"></div>
+              <span>Peak</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Most-viewed flavors</h3>
+            <p class="muted">What your customers are tapping most.</p>
+            <div id="topFlavors" class="top-list"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <div class="row-between">
+            <div>
+              <h3>Reset analytics</h3>
+              <p class="muted">Use this when you go live, after testing, or at the start of a new month.</p>
+            </div>
+            <button id="resetAnalytics" class="danger-btn">Reset</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- BRANDING -->
+      <section class="panel" data-panel="branding" hidden>
+        <h2>Branding</h2>
+        <div class="card">
+          <h3>Smokzy logo</h3>
+          <p class="muted">Shown on the book cover, back cover, and the page footer. PNG with transparent background looks best.</p>
+          <div class="logo-row">
+            <div class="logo-preview" id="settingsLogoPreview"></div>
+            <div class="logo-fields">
+              <label>Logo URL<input id="set_logoUrl" placeholder="https://..."></label>
+              <div class="upload-row">
+                <button class="ghost-btn" data-upload-target="set_logoUrl">Upload image…</button>
+                <span class="muted" style="margin:0;">PNG, JPG, SVG · up to 8MB</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Partner venue</h3>
+          <p class="muted">Add the host venue's name and logo. Shown discreetly on the cover ("Presented at…") and the back cover.</p>
+          <div class="form-grid">
+            <label>Venue name<input id="set_partnerName" placeholder="e.g. 1 OAK · The Quorum"></label>
+            <label>Venue logo URL<input id="set_partnerLogoUrl" placeholder="https://..."></label>
+          </div>
+          <div class="logo-row">
+            <div class="logo-preview" id="settingsPartnerPreview"></div>
+            <div class="logo-fields">
+              <div class="upload-row">
+                <button class="ghost-btn" data-upload-target="set_partnerLogoUrl">Upload partner logo…</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Brand name & tagline</h3>
+          <div class="form-grid">
+            <label>Brand name<input id="set_brandName"></label>
+            <label>Tagline<input id="set_tagline"></label>
+          </div>
+        </div>
+
+        <button class="primary-btn" id="saveSettings">Save branding</button>
+      </section>
+
+      <!-- COVER & FOUNDER -->
+      <section class="panel" data-panel="cover" hidden>
+        <h2>Cover page</h2>
+        <div class="card">
+          <div class="form-grid">
+            <label>Title<input id="cv_title"></label>
+            <label>Subtitle<input id="cv_subtitle"></label>
+            <label>Byline<input id="cv_byline"></label>
+            <label class="full">Background image URL<input id="cv_bg" placeholder="https://..."></label>
+            <label class="full">
+              <span style="display:flex; gap:8px; align-items:center;">
+                <button class="ghost-btn" data-upload-target="cv_bg" type="button">Upload background…</button>
+                <span class="muted" style="margin:0;">recommended 1600×1000+</span>
+              </span>
+            </label>
+            <label>"Open" button label<input id="cv_open"></label>
+          </div>
+          <button class="primary-btn" id="saveCover">Save cover</button>
+        </div>
+
+        <h2 style="margin-top:32px;">Founder's note</h2>
+        <div class="card">
+          <div class="form-grid">
+            <label>Title<input id="fn_title"></label>
+            <label>Founder name / signature<input id="fn_name"></label>
+            <label class="full">Body<textarea id="fn_body" rows="8" placeholder="Tell your story..."></textarea></label>
+          </div>
+          <button class="primary-btn" id="saveFounder">Save founder note</button>
+        </div>
+      </section>
+
+      <!-- POTS & FLAVORS -->
+      <section class="panel" data-panel="pots" hidden>
+        <div class="row-between">
+          <h2>Pots & Flavors</h2>
+          <button class="primary-btn" id="addPot">+ Add pot</button>
+        </div>
+        <div id="potList" class="pot-list"></div>
+      </section>
+
+      <!-- PAIRINGS -->
+      <section class="panel" data-panel="pairings" hidden>
+        <div class="row-between">
+          <h2>Recommended pairings</h2>
+          <button class="primary-btn" id="addPairing">+ Add pairing</button>
+        </div>
+        <div id="pairingList" class="pairing-list-admin"></div>
+      </section>
+
+      <!-- FEEDBACK -->
+      <section class="panel" data-panel="feedback" hidden>
+        <h2>Customer feedback</h2>
+        <div id="feedbackList" class="feedback-list"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

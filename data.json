@@ -1,0 +1,255 @@
+{
+  "settings": {
+    "brandName": "SMOKZY",
+    "tagline": "The Art of Shisha",
+    "logoUrl": "",
+    "partnerName": "Terra Mayaa",
+    "partnerLogoUrl": ""
+  },
+  "cover": {
+    "title": "SMOKZY",
+    "subtitle": "The Art of Shisha",
+    "byline": "Curated for Terra Mayaa · Craft Beers & Cocktails",
+    "backgroundImage": "https://images.unsplash.com/photo-1574875456553-f4cb02b15c1c?auto=format&fit=crop&w=1600&q=80",
+    "openLabel": "Open the menu"
+  },
+  "founderNote": {
+    "title": "A note from the founder",
+    "founderName": "— The Smokzy Team",
+    "body": "When we started Smokzy, we didn't want to be just another shisha lounge. We wanted to bottle a feeling — the slow exhale at the end of a long day, the laughter shared between friends, the lingering memory of a perfectly tuned flavor.\n\nEvery pot in this book has been chosen by hand. Every flavor blended, tested, and re-tested until it was undeniably Smokzy. Tap any flavor to learn its story, its strength, its mood. Find the one that fits yours tonight.\n\nWelcome in. Stay a while.",
+    "signatureImage": ""
+  },
+  "pots": [
+    {
+      "id": "pot_classic",
+      "name": "The Classic Glass",
+      "tagline": "Where it all began",
+      "image": "https://images.unsplash.com/photo-1564594985645-4427056e22e2?auto=format&fit=crop&w=900&q=80",
+      "basePrice": 800,
+      "description": "Our signature glass-base pot. Clean draw, balanced smoke, perfect for first-timers and purists alike.",
+      "flavors": [
+        {
+          "id": "fl_dblapple",
+          "name": "Double Apple",
+          "strength": 7,
+          "category": "classic",
+          "popular": true,
+          "price": 800,
+          "description": "The original. Sweet red apple wrapped around earthy green apple and a whisper of anise. The flavor that built the shisha world.",
+          "notes": [
+            "sweet",
+            "earthy",
+            "anise"
+          ]
+        },
+        {
+          "id": "fl_mintstorm",
+          "name": "Mint Storm",
+          "strength": 5,
+          "category": "mint",
+          "popular": true,
+          "price": 800,
+          "description": "Glacial peppermint with a long, cooling finish. Pairs beautifully with whiskey on the rocks.",
+          "notes": [
+            "icy",
+            "fresh",
+            "long finish"
+          ]
+        },
+        {
+          "id": "fl_grapeice",
+          "name": "Grape Ice",
+          "strength": 6,
+          "category": "fruit",
+          "popular": false,
+          "price": 800,
+          "description": "Concord grape candy on the inhale, a clean menthol exhale. Crowd favorite on warm nights.",
+          "notes": [
+            "sweet",
+            "cool",
+            "candy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pot_premium",
+      "name": "Smokzy Royale",
+      "tagline": "Our signature premium pot",
+      "image": "https://images.unsplash.com/photo-1547005379-f0d6f0b7b87a?auto=format&fit=crop&w=900&q=80",
+      "basePrice": 1400,
+      "description": "Hand-blown gold-rim base, wide bowl, pillow-soft draw. This is what we set the table for.",
+      "flavors": [
+        {
+          "id": "fl_blueberry",
+          "name": "Midnight Blueberry",
+          "strength": 8,
+          "category": "fruit",
+          "popular": true,
+          "price": 1400,
+          "description": "Wild blueberry compote layered over hints of vanilla cream. Heavy, indulgent, unforgettable.",
+          "notes": [
+            "rich",
+            "creamy",
+            "berry"
+          ]
+        },
+        {
+          "id": "fl_lovestruck",
+          "name": "Love Struck",
+          "strength": 6,
+          "category": "signature",
+          "popular": true,
+          "price": 1400,
+          "description": "Rose petals, pomegranate, a touch of cardamom. Built for date night.",
+          "notes": [
+            "floral",
+            "tart",
+            "warm"
+          ]
+        },
+        {
+          "id": "fl_cuban",
+          "name": "Cuban Nights",
+          "strength": 9,
+          "category": "tobacco",
+          "popular": false,
+          "price": 1400,
+          "description": "A serious blend — aged tobacco notes, cocoa, smoked oak. For the experienced palate.",
+          "notes": [
+            "bold",
+            "smoky",
+            "cocoa"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pot_fruit",
+      "name": "Fruit Garden",
+      "tagline": "Real fruit, fresh-cut, every time",
+      "image": "https://images.unsplash.com/photo-1547392222-9f0bcaad9d29?auto=format&fit=crop&w=900&q=80",
+      "basePrice": 1100,
+      "description": "Fresh fruit shells replace the bowl. The flavor literally infuses through the fruit before reaching you.",
+      "flavors": [
+        {
+          "id": "fl_pineapple",
+          "name": "Pineapple Express",
+          "strength": 4,
+          "category": "fruit",
+          "popular": true,
+          "price": 1100,
+          "description": "Hollowed pineapple bowl. Sweet, tropical, light enough to share for hours.",
+          "notes": [
+            "tropical",
+            "juicy",
+            "light"
+          ]
+        },
+        {
+          "id": "fl_watermelon",
+          "name": "Watermelon Crush",
+          "strength": 3,
+          "category": "fruit",
+          "popular": false,
+          "price": 1100,
+          "description": "Watermelon shell, real chilled watermelon water in the base. Pure summer.",
+          "notes": [
+            "fresh",
+            "cool",
+            "delicate"
+          ]
+        },
+        {
+          "id": "fl_orange",
+          "name": "Blood Orange",
+          "strength": 5,
+          "category": "fruit",
+          "popular": false,
+          "price": 1100,
+          "description": "Bittersweet citrus zest with a hint of campfire smoke. Sophisticated.",
+          "notes": [
+            "citrus",
+            "smoky",
+            "tart"
+          ]
+        }
+      ]
+    }
+  ],
+  "pairings": [
+    {
+      "id": "pair_1",
+      "drink": "Whiskey on the rocks",
+      "flavor": "Mint Storm",
+      "reason": "The icy mint cuts straight through the smokiness and lets the whiskey caramel come forward."
+    },
+    {
+      "id": "pair_2",
+      "drink": "Espresso Martini",
+      "flavor": "Cuban Nights",
+      "reason": "Cocoa and aged tobacco notes mirror the espresso — they finish each other's sentences."
+    },
+    {
+      "id": "pair_3",
+      "drink": "Mojito",
+      "flavor": "Watermelon Crush",
+      "reason": "Both light and clean. Lets you sip and smoke for hours without flavor fatigue."
+    },
+    {
+      "id": "pair_4",
+      "drink": "Old Fashioned",
+      "flavor": "Midnight Blueberry",
+      "reason": "The orange peel and bourbon find a quiet harmony with rich berry sweetness."
+    },
+    {
+      "id": "pair_5",
+      "drink": "Champagne",
+      "flavor": "Love Struck",
+      "reason": "Rose and pomegranate amplify the toasty notes in the wine. Made for celebrations."
+    },
+    {
+      "id": "pair_6",
+      "drink": "Beer (Lager)",
+      "flavor": "Double Apple",
+      "reason": "A timeless pairing — the malt and the classic apple-anise just work."
+    }
+  ],
+  "feedback": [],
+  "analytics": {
+    "totalViews": 3,
+    "uniqueVisitors": [
+      "v_drc2hxbrxyqmodzed0f"
+    ],
+    "flavorViews": {},
+    "hourlyTraffic": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "dailyTraffic": {
+      "2026-04-25": 3
+    }
+  }
+}
