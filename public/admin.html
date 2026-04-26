@@ -30,6 +30,7 @@
         <button class="tab active" data-tab="dashboard">Dashboard</button>
         <button class="tab" data-tab="branding">Branding</button>
         <button class="tab" data-tab="cover">Cover & Founder</button>
+        <button class="tab" data-tab="library">Flavour Library</button>
         <button class="tab" data-tab="pots">Pots & Flavors</button>
         <button class="tab" data-tab="pairings">Pairings</button>
         <button class="tab" data-tab="feedback">Feedback</button>
@@ -157,6 +158,18 @@
           </div>
           <button class="primary-btn" id="saveFounder">Save founder note</button>
         </div>
+      </section>
+
+      <!-- FLAVOUR LIBRARY -->
+      <section class="panel" data-panel="library" hidden>
+        <div class="row-between">
+          <div>
+            <h2>Flavour Library</h2>
+            <p class="muted" style="margin:0;">Define every flavour Smokzy serves once. Then attach them to pots from a dropdown — no retyping. Edit a flavour here and every pot using it updates instantly.</p>
+          </div>
+          <button class="primary-btn" id="addLibrary">+ New flavour</button>
+        </div>
+        <div id="libraryList" class="library-list"></div>
       </section>
 
       <!-- POTS & FLAVORS -->

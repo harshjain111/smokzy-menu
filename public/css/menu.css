@@ -411,6 +411,122 @@ body {
   color: var(--ink-soft);
   margin-bottom: 22px;
 }
+/* ===========================================================
+   QUIET CARTOGRAPHY — flavour page (replaces .flavor-list)
+   Two sections (Signature / Imported), two columns each.
+   Hairlines, gold capital small-caps, restraint as luxury.
+   =========================================================== */
+.flavor-list.qc { padding: 30px 32px 24px; }
+
+.qc-title-block { text-align: center; margin-bottom: 14px; }
+.qc-title {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(22px, 3vw, 30px);
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+.qc-subtitle {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+.qc-ornament {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; margin-top: 10px;
+}
+.qc-ornament .qc-rule.short { flex: 0 0 60px; }
+.qc-diamond { color: var(--gold); font-size: 8px; }
+.qc-rule {
+  flex: 1; height: 1px;
+  background: rgba(28,24,20,0.18);
+}
+
+.qc-body { display: flex; flex-direction: column; gap: 18px; }
+
+.qc-section-head {
+  display: flex; align-items: center; gap: 14px;
+  margin: 6px 0 8px;
+}
+.qc-section-label {
+  font-family: var(--sans);
+  font-size: 10px;
+  letter-spacing: 3px;
+  font-weight: 600;
+  color: var(--gold);
+  white-space: nowrap;
+  text-transform: none; /* tracking already in the string */
+}
+
+.qc-cols {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: 0 22px;
+}
+.qc-col { min-width: 0; }
+.qc-divider {
+  background: rgba(28,24,20,0.10);
+}
+
+.qc-row {
+  display: flex; align-items: center;
+  padding: 8px 2px;
+  border-bottom: 1px dotted rgba(28,24,20,0.10);
+  cursor: pointer;
+  transition: background 0.18s;
+  min-width: 0;
+}
+.qc-row:last-child { border-bottom: 0; }
+.qc-row:hover { background: rgba(201,168,106,0.10); }
+.qc-name {
+  flex: 1;
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: 0.2px;
+}
+.qc-pop { color: var(--burgundy); font-size: 10px; }
+.qc-strength {
+  display: inline-flex; gap: 3px;
+  margin: 0 8px 0 8px;
+  flex-shrink: 0;
+}
+.qc-strength i {
+  width: 3px; height: 11px;
+  background: rgba(28,24,20,0.14);
+  display: block;
+}
+.qc-strength i.on { background: var(--burgundy); }
+.qc-arr {
+  color: var(--gold);
+  font-family: var(--serif);
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.qc-row:hover .qc-arr { transform: translateX(3px); }
+
+/* density tiers — when many flavours, tighten the rows */
+.qc-body.qc-medium .qc-row { padding: 6px 2px; }
+.qc-body.qc-medium .qc-name { font-size: 15px; }
+.qc-body.qc-tight  .qc-row { padding: 4px 2px; }
+.qc-body.qc-tight  .qc-name { font-size: 13px; letter-spacing: 0.1px; }
+.qc-body.qc-tight  .qc-strength i { height: 9px; }
+.qc-body.qc-tight  .qc-arr { font-size: 15px; }
+
+@media (max-width: 720px) {
+  .flavor-list.qc { padding: 22px 20px; }
+  .qc-cols { grid-template-columns: 1fr; }
+  .qc-divider { display: none; }
+  .qc-name { font-size: 15px; }
+}
+
+/* leave the legacy class alone for any back-references */
 /* flavors auto-fit by count: 1 col for ≤6, 2 col for 7-12, 2-col tighter for 13+ */
 .flavors {
   display: grid;

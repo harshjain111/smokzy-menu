@@ -1,4 +1,4 @@
-// Smokzy Admin — login, CRUD, dashboard, image uploads
+// Smokzy Admin — login, CRUD, dashboard, image uploads, master flavour library
 (() => {
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -53,11 +53,11 @@
   async function refresh() {
     DATA = await api('/api/admin/data');
     renderSettings(); renderCover(); renderFounder();
-    renderPots(); renderPairings(); renderFeedback();
+    renderLibrary(); renderPots(); renderPairings(); renderFeedback();
     loadDashboard();
   }
 
-  // delegated upload (any element with data-upload-target="<inputId>")
+  // delegated upload
   document.addEventListener('click', e => {
     const btn = e.target.closest('[data-upload-target]');
     if (!btn) return;
@@ -80,13 +80,11 @@
           target.dispatchEvent(new Event('input', { bubbles: true }));
           target.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        // mirror new URL into local DATA cache so renderSettings doesn't clobber it
         if (DATA) {
           if (targetId === 'set_logoUrl' && DATA.settings)        DATA.settings.logoUrl = j.url;
           if (targetId === 'set_partnerLogoUrl' && DATA.settings) DATA.settings.partnerLogoUrl = j.url;
           if (targetId === 'cv_bg' && DATA.cover)                 DATA.cover.backgroundImage = j.url;
         }
-        // auto-save logo/partner uploads immediately so URL persists to Supabase
         if (targetId === 'set_logoUrl' || targetId === 'set_partnerLogoUrl') {
           await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify({
             brandName: document.getElementById('set_brandName').value,
@@ -110,10 +108,8 @@
   function renderSettings() {
     const s = (DATA && DATA.settings) || {};
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
-    set('set_brandName', s.brandName);
-    set('set_tagline', s.tagline);
-    set('set_logoUrl', s.logoUrl);
-    set('set_partnerName', s.partnerName);
+    set('set_brandName', s.brandName); set('set_tagline', s.tagline);
+    set('set_logoUrl', s.logoUrl); set('set_partnerName', s.partnerName);
     set('set_partnerLogoUrl', s.partnerLogoUrl);
     const lp = document.getElementById('settingsLogoPreview');
     if (lp) { lp.style.backgroundImage = s.logoUrl ? "url('" + s.logoUrl + "')" : ''; lp.textContent = s.logoUrl ? '' : 'No logo'; }
@@ -165,10 +161,110 @@
     } catch (err) { alert(err.message); }
   });
 
-  // POTS + FLAVORS
+  // ============ FLAVOUR LIBRARY ============
+  function renderLibrary() {
+    const wrap = $('#libraryList');
+    if (!wrap) return;
+    const lib = (DATA && DATA.library) || [];
+    if (!lib.length) {
+      wrap.innerHTML = '<div class="card muted" style="margin-top:14px;">Library is empty. Click "+ New flavour" to add your first one.</div>';
+      return;
+    }
+    wrap.innerHTML = lib.map(L => `
+      <div>
+        <div class="library-card" data-id="${esc(L.id)}">
+          <div class="library-thumb" style="background-image:url('${esc(L.image)}')"></div>
+          <div><strong>${esc(L.name) || '<em style="color:#888">untitled</em>'}</strong>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc((L.description || '').slice(0, 80))}${(L.description||'').length>80?'…':''}</div>
+          </div>
+          <div><span class="blend-chip ${L.blendType}">${L.blendType}</span></div>
+          <div style="font-size:13px;color:var(--muted);">Strength ${L.strength}/10</div>
+          <div style="font-size:13px;color:var(--muted);">₹${L.defaultPrice}</div>
+          <div style="font-size:12px;color:var(--muted);">in ${L.usedInPots} pot${L.usedInPots===1?'':'s'}</div>
+          <div class="lib-row-actions">
+            <button class="ghost-btn mini" data-act="edit-lib">Edit</button>
+            <button class="del-mini" data-act="del-lib">×</button>
+          </div>
+        </div>
+        <div class="library-edit">
+          <div class="form-grid">
+            <label>Name<input data-lf="name" value="${esc(L.name)}"></label>
+            <label>Blend type
+              <select data-lf="blendType">
+                <option value="signature" ${L.blendType==='signature'?'selected':''}>Signature</option>
+                <option value="imported" ${L.blendType==='imported'?'selected':''}>Imported</option>
+              </select>
+            </label>
+            <label>Strength (1-10)<input data-lf="strength" type="number" min="1" max="10" value="${L.strength}"></label>
+            <label>Default price (₹)<input data-lf="defaultPrice" type="number" value="${L.defaultPrice}"></label>
+            <label class="full">Image URL
+              <div class="img-with-upload">
+                <input data-lf="image" id="lib_img_${L.id}" value="${esc(L.image || '')}">
+                <button type="button" class="ghost-btn" data-upload-target="lib_img_${L.id}">Upload…</button>
+              </div>
+            </label>
+            <label class="full">Description / tasting notes<textarea data-lf="description" rows="3">${esc(L.description || '')}</textarea></label>
+            <label style="display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0;">
+              <input type="checkbox" data-lf="popular" ${L.popular?'checked':''} style="width:auto;">
+              Mark as popular (★)
+            </label>
+          </div>
+          <button class="primary-btn" data-act="save-lib">Save flavour</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  $('#addLibrary').addEventListener('click', async () => {
+    const name = prompt('Flavour name? (you can fill the rest after)');
+    if (!name) return;
+    await api('/api/admin/library', { method: 'POST', body: JSON.stringify({ name, blendType: 'signature' }) });
+    refresh();
+  });
+
+  $('#libraryList').addEventListener('click', async e => {
+    const card = e.target.closest('.library-card');
+    if (!card) return;
+    const id = card.dataset.id;
+    const act = e.target.dataset.act;
+    if (!act) return;
+    e.preventDefault();
+    if (act === 'edit-lib') { card.classList.toggle('editing'); return; }
+    if (act === 'del-lib') {
+      const L = (DATA.library || []).find(x => x.id === id);
+      if (L && L.usedInPots > 0) {
+        if (!confirm(`This flavour is used in ${L.usedInPots} pot(s). Deleting will remove it from those pots too. Continue?`)) return;
+      } else {
+        if (!confirm('Delete this flavour from the library?')) return;
+      }
+      await api('/api/admin/library/' + id, { method: 'DELETE' });
+      refresh();
+      return;
+    }
+    if (act === 'save-lib') {
+      const wrap = card.parentElement;
+      const fields = {};
+      wrap.querySelectorAll('[data-lf]').forEach(el => {
+        let v;
+        if (el.type === 'checkbox') v = el.checked;
+        else if (el.type === 'number') v = +el.value;
+        else v = el.value;
+        fields[el.dataset.lf] = v;
+      });
+      await api('/api/admin/library/' + id, { method: 'PUT', body: JSON.stringify(fields) });
+      flash('Library flavour saved');
+      refresh();
+    }
+  });
+
+  // ============ POTS + FLAVORS ============
   function renderPots() {
     const wrap = $('#potList'); wrap.innerHTML = '';
+    const lib = (DATA && DATA.library) || [];
     (DATA.pots || []).forEach(pot => {
+      const linkedIds = new Set((pot.flavors || []).filter(f => f.source === 'library').map(f => f.libraryId));
+      const inlineFlavors = (pot.flavors || []).filter(f => f.source !== 'library');
+      const linkedFlavors = (pot.flavors || []).filter(f => f.source === 'library');
       const card = document.createElement('div');
       card.className = 'pot-card'; card.dataset.id = pot.id;
       card.innerHTML = `
@@ -198,11 +294,43 @@
           </div>
           <button class="primary-btn" data-act="save-pot">Save pot</button>
         </div>
-        <div class="flavor-table">
-          <div class="flavor-row header">
-            <div>Image</div><div>Flavor name</div><div>Strength</div><div>Price ₹</div><div>Description</div><div class="center">Pop?</div><div></div>
+
+        <!-- LIBRARY-LINKED FLAVOURS -->
+        <div class="lib-picker">
+          <div class="picker-head">
+            <strong style="color:var(--ink); letter-spacing:0; text-transform:none; font-size:14px;">Flavours from Library</strong>
+            <span style="margin-left:auto; font-size:11px;">${linkedFlavors.length} linked</span>
           </div>
-          ${(pot.flavors || []).map(fl => `
+          <div class="linked-rows">
+            ${linkedFlavors.map(f => `
+              <span class="linked-pill ${f.blendType}">${esc(f.name)}
+                <button data-act="unlink" data-lib-id="${esc(f.libraryId)}" title="Remove from this pot">×</button>
+              </span>`).join('')}
+            ${linkedFlavors.length===0 ? '<span style="color:var(--muted); font-size:13px; font-style:italic;">No library flavours linked yet.</span>' : ''}
+          </div>
+          <input type="text" class="picker-search" placeholder="Search library to add…" data-act="lib-search">
+          <div class="lib-options" data-act="lib-options" hidden>
+            ${lib.map(L => `
+              <label class="lib-option" data-lib-id="${esc(L.id)}" data-name="${esc(L.name).toLowerCase()}">
+                <input type="checkbox" ${linkedIds.has(L.id) ? 'checked disabled' : ''}>
+                <span class="name">${esc(L.name)}</span>
+                <span class="blend-chip ${L.blendType}">${L.blendType}</span>
+                <span style="color:var(--muted); font-size:12px;">str ${L.strength} · ₹${L.defaultPrice}</span>
+              </label>`).join('')}
+          </div>
+          <button class="primary-btn" data-act="link-selected" style="margin-top:8px;">Add selected to pot</button>
+        </div>
+
+        <!-- INLINE (custom one-off) FLAVOURS -->
+        <div class="flavor-table">
+          <div class="picker-head" style="display:flex; align-items:center; gap:8px;">
+            <strong style="color:var(--ink); letter-spacing:0; text-transform:none; font-size:14px;">Custom flavours (this pot only)</strong>
+          </div>
+          ${inlineFlavors.length ? `
+          <div class="flavor-row header">
+            <div>Image</div><div>Name</div><div>Strength</div><div>Price</div><div>Description</div><div class="center">Pop?</div><div></div>
+          </div>` : ''}
+          ${inlineFlavors.map(fl => `
             <div class="flavor-row" data-flavor-id="${esc(fl.id)}">
               <div class="flavor-thumb-cell">
                 <div class="flavor-thumb" style="background-image:url('${esc(fl.image || '')}')"></div>
@@ -216,8 +344,8 @@
               <input data-ff="popular" type="checkbox" ${fl.popular ? 'checked' : ''} class="center">
               <button class="del-mini" data-act="del-flavor">Delete</button>
             </div>`).join('')}
-          <div class="add-flavor-row" data-act="add-flavor">+ Add flavor to ${esc(pot.name)}</div>
-          <div style="margin-top:10px;"><button class="primary-btn" data-act="save-flavors">Save all flavors</button></div>
+          <div class="add-flavor-row" data-act="add-flavor">+ Add custom flavour</div>
+          ${inlineFlavors.length ? '<div style="margin-top:10px;"><button class="primary-btn" data-act="save-flavors">Save custom flavours</button></div>' : ''}
         </div>
       `;
       wrap.appendChild(card);
@@ -230,6 +358,7 @@
     refresh();
   });
 
+  // pot-level interactions (delegated)
   $('#potList').addEventListener('click', async e => {
     const card = e.target.closest('.pot-card'); if (!card) return;
     const potId = card.dataset.id;
@@ -251,13 +380,13 @@
       flash('Pot saved'); refresh(); return;
     }
     if (act === 'add-flavor') {
-      const name = prompt('Flavor name?'); if (!name) return;
+      const name = prompt('Custom flavour name?'); if (!name) return;
       await api('/api/admin/pots/' + potId + '/flavors', { method: 'POST', body: JSON.stringify({ name }) });
       refresh(); return;
     }
     if (act === 'del-flavor') {
       const row = e.target.closest('.flavor-row'); const flavorId = row.dataset.flavorId;
-      if (confirm('Delete this flavor?')) {
+      if (confirm('Delete this custom flavour?')) {
         await api('/api/admin/pots/' + potId + '/flavors/' + flavorId, { method: 'DELETE' }); refresh();
       } return;
     }
@@ -275,11 +404,48 @@
         });
         await api('/api/admin/pots/' + potId + '/flavors/' + flavorId, { method: 'PUT', body: JSON.stringify(fields) });
       }
-      flash('Flavors saved'); refresh();
+      flash('Flavours saved'); refresh(); return;
+    }
+    // unlink a library flavor
+    if (act === 'unlink') {
+      const libId = e.target.dataset.libId;
+      if (confirm('Remove this library flavour from this pot? (the master flavour stays in your library)')) {
+        await api('/api/admin/pots/' + potId + '/library/' + libId, { method: 'DELETE' });
+        refresh();
+      }
+      return;
+    }
+    // link selected library flavours
+    if (act === 'link-selected') {
+      const opts = card.querySelectorAll('.lib-option input[type=checkbox]:not(:disabled):checked');
+      const ids = Array.from(opts).map(cb => cb.closest('.lib-option').dataset.libId);
+      if (!ids.length) { alert('Pick at least one flavour from the list first.'); return; }
+      await api('/api/admin/pots/' + potId + '/library', { method: 'POST', body: JSON.stringify({ libraryIds: ids }) });
+      flash('Linked ' + ids.length + ' flavour' + (ids.length===1?'':'s'));
+      refresh();
+      return;
     }
   });
 
-  // PAIRINGS
+  // search filter for the lib-options dropdown
+  $('#potList').addEventListener('input', e => {
+    if (e.target.dataset.act !== 'lib-search') return;
+    const card = e.target.closest('.pot-card');
+    const opts = card.querySelector('.lib-options');
+    opts.hidden = false;
+    const q = e.target.value.trim().toLowerCase();
+    card.querySelectorAll('.lib-option').forEach(o => {
+      o.style.display = (!q || o.dataset.name.includes(q)) ? '' : 'none';
+    });
+  });
+  $('#potList').addEventListener('focusin', e => {
+    if (e.target.dataset.act === 'lib-search') {
+      const card = e.target.closest('.pot-card');
+      card.querySelector('.lib-options').hidden = false;
+    }
+  });
+
+  // ============ PAIRINGS ============
   function renderPairings() {
     const wrap = $('#pairingList'); wrap.innerHTML = '';
     (DATA.pairings || []).forEach(p => {
@@ -322,7 +488,7 @@
     }
   });
 
-  // FEEDBACK
+  // ============ FEEDBACK ============
   function renderFeedback() {
     const wrap = $('#feedbackList');
     if (!DATA.feedback || !DATA.feedback.length) {
@@ -354,7 +520,7 @@
     }
   });
 
-  // DASHBOARD
+  // ============ DASHBOARD ============
   async function loadDashboard() {
     let a;
     try { a = await api('/api/admin/analytics'); } catch (e) { return; }

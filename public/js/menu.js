@@ -79,28 +79,66 @@
       '</div>');
   }
 
+  // Quiet Cartography — flavour list with two blend sections, two columns each.
   function renderPotFlavors(pot, pageNum) {
     const flavors = pot.flavors || [];
-    const dCls = flavors.length > 12 ? 'dense-3' :
-                 flavors.length > 6  ? 'dense-2' : 'dense-1';
-    const items = flavors.map(fl => {
-      const dots = Array.from({length: 10}, (_, i) =>
-        '<i class="' + (i < (fl.strength || 0) ? 'on' : '') + '"></i>').join('');
+    const sig = flavors.filter(f => (f.blendType || 'signature') === 'signature');
+    const imp = flavors.filter(f => (f.blendType || 'signature') === 'imported');
+    const total = flavors.length;
+    // density: when you have many, the rows tighten up
+    const dCls = total > 18 ? 'qc-tight' : total > 10 ? 'qc-medium' : 'qc-roomy';
+
+    function strengthBars(n) {
+      let html = '<span class="qc-strength">';
+      for (let i = 0; i < 5; i++) {
+        const on = (i + 1) <= Math.round((n || 0) / 2);
+        html += '<i class="' + (on ? 'on' : '') + '"></i>';
+      }
+      html += '</span>';
+      return html;
+    }
+    function rowHtml(fl) {
       return (
-        '<div class="flavor-item" data-flavor-id="' + esc(fl.id) + '" data-pot-id="' + esc(pot.id) + '">' +
-          (fl.image ? '<div class="flavor-mini" style="background-image:url(\'' + esc(fl.image) + '\')"></div>' : '') +
-          '<span class="name">' + esc(fl.name) + '</span>' +
-          (fl.popular ? '<span class="pop-tag">★</span>' : '') +
-          '<span class="strength" title="Strength ' + (fl.strength || 0) + '/10">' + dots + '</span>' +
-          '<span class="arrow">›</span>' +
+        '<div class="qc-row" data-flavor-id="' + esc(fl.id) + '" data-pot-id="' + esc(pot.id) + '">' +
+          '<span class="qc-name">' + esc(fl.name) +
+            (fl.popular ? ' <span class="qc-pop">★</span>' : '') +
+          '</span>' +
+          strengthBars(fl.strength) +
+          '<span class="qc-arr">›</span>' +
         '</div>');
-    }).join('');
-    return face('flavor-list front',
-      '<h4>' + esc(pot.name) + ' — Flavors</h4>' +
-      '<div class="hint-line">Tap any flavor to reveal its story.</div>' +
-      '<div class="flavors ' + dCls + '">' +
-        (items || '<div style="color:var(--ink-soft); font-style:italic;">No flavors yet.</div>') +
+    }
+    function twoColSection(items) {
+      if (!items.length) return '';
+      const half = Math.ceil(items.length / 2);
+      const colA = items.slice(0, half).map(rowHtml).join('');
+      const colB = items.slice(half).map(rowHtml).join('');
+      return '<div class="qc-cols"><div class="qc-col">' + colA + '</div>' +
+             '<div class="qc-divider"></div>' +
+             '<div class="qc-col">' + colB + '</div></div>';
+    }
+    function sectionHeader(label) {
+      return '<div class="qc-section-head">' +
+        '<span class="qc-rule"></span>' +
+        '<span class="qc-section-label">' + label + '</span>' +
+        '<span class="qc-rule"></span>' +
+      '</div>';
+    }
+
+    let body = '';
+    if (sig.length) body += sectionHeader('S I G N A T U R E   B L E N D S') + twoColSection(sig);
+    if (imp.length) body += sectionHeader('I M P O R T E D   B L E N D S')  + twoColSection(imp);
+    if (!sig.length && !imp.length) {
+      body = '<div style="color:var(--ink-soft); font-style:italic; margin:auto;">No flavours yet.</div>';
+    }
+
+    return face('flavor-list front qc',
+      '<div class="qc-title-block">' +
+        '<h4 class="qc-title">' + esc(pot.name) + '</h4>' +
+        '<div class="qc-subtitle">' + total + ' flavour' + (total === 1 ? '' : 's') +
+          (sig.length && imp.length ? ', two traditions' : '') + '</div>' +
+        '<div class="qc-ornament"><span class="qc-rule short"></span><span class="qc-diamond">◆</span><span class="qc-rule short"></span></div>' +
       '</div>' +
+      '<div class="qc-body ' + dCls + '">' + body + '</div>' +
       '<span class="page-tag">' + pageNum + '</span>');
   }
 
@@ -222,7 +260,7 @@
       el.appendChild(leaf.front);
       el.appendChild(leaf.back);
       el.addEventListener('click', e => {
-        if (e.target.closest('input, textarea, button, select, .flavor-item, label, .stars span')) return;
+        if (e.target.closest('input, textarea, button, select, .qc-row, label, .stars span')) return;
         nextPage();
       });
       book.appendChild(el);
@@ -287,7 +325,7 @@
     $('#flavorModalBody').innerHTML =
       img +
       '<div class="modal-text">' +
-        '<div class="pot-of">From ' + esc(pot.name) + '</div>' +
+        '<div class="pot-of">From ' + esc(pot.name) + ' · ' + ((fl.blendType || 'signature').toUpperCase()) + '</div>' +
         '<h3>' + esc(fl.name) + '</h3>' +
         '<div class="price">₹' + (fl.price != null ? fl.price : (pot.basePrice || '')) + '</div>' +
         '<div class="strengthBar">' +
@@ -332,7 +370,7 @@
   });
 
   document.addEventListener('click', e => {
-    const fi = e.target.closest('.flavor-item');
+    const fi = e.target.closest('.qc-row');
     if (fi) { e.stopPropagation(); openFlavor(fi.dataset.potId, fi.dataset.flavorId); return; }
     const star = e.target.closest('#stars span');
     if (star) {

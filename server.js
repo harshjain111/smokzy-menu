@@ -115,7 +115,7 @@ app.put('/api/admin/settings', requireAdmin, async (req, res) => {
   try { res.json(await db.updateSettings(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// admin: pots + flavors
+// admin: pots + inline flavors
 app.post('/api/admin/pots', requireAdmin, async (req, res) => {
   try { res.json(await db.createPot(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -133,6 +133,42 @@ app.put('/api/admin/pots/:potId/flavors/:flavorId', requireAdmin, async (req, re
 });
 app.delete('/api/admin/pots/:potId/flavors/:flavorId', requireAdmin, async (req, res) => {
   try { await db.deleteFlavor(req.params.potId, req.params.flavorId); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// admin: master flavour library
+app.get('/api/admin/library', requireAdmin, async (req, res) => {
+  try { res.json(await db.listLibrary()); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/admin/library', requireAdmin, async (req, res) => {
+  try { res.json(await db.createLibraryFlavor(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.put('/api/admin/library/:id', requireAdmin, async (req, res) => {
+  try { res.json(await db.updateLibraryFlavor(req.params.id, req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.delete('/api/admin/library/:id', requireAdmin, async (req, res) => {
+  try { await db.deleteLibraryFlavor(req.params.id); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// admin: pot-library links
+app.post('/api/admin/pots/:potId/library', requireAdmin, async (req, res) => {
+  try {
+    const ids = (req.body && req.body.libraryIds) || [];
+    await db.linkLibraryToPot(req.params.potId, ids);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.delete('/api/admin/pots/:potId/library/:libraryId', requireAdmin, async (req, res) => {
+  try {
+    await db.unlinkLibraryFromPot(req.params.potId, req.params.libraryId);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.put('/api/admin/pots/:potId/library/:libraryId', requireAdmin, async (req, res) => {
+  try {
+    const po = req.body && req.body.priceOverride;
+    await db.setLinkPriceOverride(req.params.potId, req.params.libraryId, po == null || po === '' ? null : Number(po));
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // admin: pairings + feedback
