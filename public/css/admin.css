@@ -408,6 +408,12 @@ body { font-family: var(--sans); background: var(--bg); color: var(--ink); font-
   border-radius: 999px; font-size: 11px; text-transform: lowercase;
 }
 .tag-preset:hover { background: var(--ink); color: var(--gold); border-color: var(--ink); }
+.tag-preset.custom {
+  background: #f3ecd6;
+  color: #7a4a1a;
+  border-color: #e2d3a8;
+}
+.tag-preset.custom:hover { background: var(--burgundy); color: #fff; border-color: var(--burgundy); }
 
 /* ---------- STRENGTH CHIP (in library list) ---------- */
 .strength-chip {

@@ -58,15 +58,29 @@
   }
 
   // ---- helpers ----
+  function getAllKnownTags() {
+    const set = new Set(TAG_PRESETS);
+    if (DATA) {
+      (DATA.library || []).forEach(L => (L.tags || []).forEach(t => set.add(t)));
+      (DATA.pots || []).forEach(p => (p.flavors || []).forEach(f => (f.tags || []).forEach(t => set.add(t))));
+    }
+    return Array.from(set).sort();
+  }
   function tagsInputHtml(id, tags) {
     const ts = (tags || []).map(t => '<span class="tag-pill" data-tag="' + esc(t) + '">' + esc(t) + '<button type="button" data-act="del-tag" data-tag="' + esc(t) + '">×</button></span>').join('');
+    const all = getAllKnownTags();
+    const presetsHtml = all.map(t => {
+      const isCustom = !TAG_PRESETS.includes(t);
+      return '<button type="button" class="tag-preset' + (isCustom ? ' custom' : '') + '" data-act="add-preset" data-tag="' + esc(t) + '">' + esc(t) + '</button>';
+    }).join('');
     return `
       <div class="tag-input" data-tags-for="${esc(id)}">
         <div class="tag-pills">${ts}</div>
-        <input type="text" placeholder="add tag + Enter (or pick below)" class="tag-text">
-        <div class="tag-presets">
-          ${TAG_PRESETS.map(t => `<button type="button" class="tag-preset" data-act="add-preset" data-tag="${esc(t)}">${esc(t)}</button>`).join('')}
-        </div>
+        <input type="text" placeholder="add tag + Enter (or pick below)" class="tag-text" list="tag-suggestions-${esc(id)}">
+        <datalist id="tag-suggestions-${esc(id)}">
+          ${all.map(t => `<option value="${esc(t)}">`).join('')}
+        </datalist>
+        <div class="tag-presets">${presetsHtml}</div>
       </div>`;
   }
   function strengthSelectHtml(value) {
@@ -78,7 +92,7 @@
     </select>`;
   }
 
-  // delegated upload (any element with data-upload-target="<inputId>")
+  // delegated upload
   document.addEventListener('click', e => {
     const btn = e.target.closest('[data-upload-target]');
     if (!btn) return;
@@ -95,14 +109,11 @@
         const r = await fetch('/api/admin/upload', { method: 'POST', body: fd, credentials: 'same-origin' });
         const j = await r.json();
         if (!r.ok) throw new Error(j.error || 'upload failed');
-        const target = document.getElementById(targetId) || document.querySelector('[name="' + targetId + '"]') || document.querySelector('[id="' + targetId + '"]');
-        // also try inside modal forms by name
-        const inModal = document.querySelector('input[name="image"]#' + CSS.escape(targetId));
-        const finalTarget = target || inModal;
-        if (finalTarget) {
-          finalTarget.value = j.url;
-          finalTarget.dispatchEvent(new Event('input', { bubbles: true }));
-          finalTarget.dispatchEvent(new Event('change', { bubbles: true }));
+        const target = document.getElementById(targetId);
+        if (target) {
+          target.value = j.url;
+          target.dispatchEvent(new Event('input', { bubbles: true }));
+          target.dispatchEvent(new Event('change', { bubbles: true }));
         }
         if (DATA) {
           if (targetId === 'set_logoUrl' && DATA.settings)        DATA.settings.logoUrl = j.url;
@@ -118,9 +129,7 @@
             partnerLogoUrl: document.getElementById('set_partnerLogoUrl').value
           })});
           flash('Uploaded & saved ✓');
-        } else {
-          flash('Uploaded ✓');
-        }
+        } else { flash('Uploaded ✓'); }
         renderSettings();
       } catch (err) { alert('Upload failed: ' + err.message); }
       finally { btn.disabled = false; btn.textContent = orig; }
@@ -128,7 +137,7 @@
     fi.click();
   });
 
-  // ---- TAG INPUT delegated handlers ----
+  // tag input handlers
   document.addEventListener('keydown', e => {
     if (!e.target.classList.contains('tag-text')) return;
     if (e.key !== 'Enter') return;
@@ -171,6 +180,23 @@
     form.reset();
     $('#nf_err').textContent = '';
     modal.querySelector('.tag-pills').innerHTML = '';
+    // refresh preset chips with all known tags (presets + already-used ones)
+    const all = getAllKnownTags();
+    const presetWrap = modal.querySelector('.tag-presets');
+    presetWrap.innerHTML = all.map(t => {
+      const isCustom = !TAG_PRESETS.includes(t);
+      return '<button type="button" class="tag-preset' + (isCustom ? ' custom' : '') + '" data-act="add-preset" data-tag="' + esc(t) + '">' + esc(t) + '</button>';
+    }).join('');
+    // also refresh datalist
+    let dl = modal.querySelector('datalist');
+    if (!dl) {
+      dl = document.createElement('datalist');
+      dl.id = 'tag-suggestions-nf';
+      modal.querySelector('.tag-input .tag-text').setAttribute('list', 'tag-suggestions-nf');
+      modal.querySelector('.tag-input').appendChild(dl);
+    }
+    dl.innerHTML = all.map(t => '<option value="' + esc(t) + '">').join('');
+
     modal.hidden = false;
     setTimeout(() => modal.querySelector('input[name="name"]').focus(), 50);
   }
@@ -213,7 +239,7 @@
       refresh();
     } catch (err) {
       errBox.innerHTML = 'Could not save: ' + esc(err.message) +
-        '<br><span style="color:var(--muted); font-size:12px;">If this mentions "column does not exist", run <strong>lib/schema-v3.sql</strong> in your Supabase SQL editor first.</span>';
+        '<br><span style="color:var(--muted); font-size:12px;">If this mentions "column does not exist" or "schema cache", run <strong>lib/schema-v3.sql</strong> in your Supabase SQL editor first.</span>';
     } finally {
       submitBtn.disabled = false; submitBtn.textContent = 'Add to library';
     }
@@ -344,7 +370,7 @@
     if (act === 'del-lib') {
       const L = (DATA.library || []).find(x => x.id === id);
       if (L && L.usedInPots > 0) {
-        if (!confirm(`This flavour is used in ${L.usedInPots} pot(s). Deleting will remove it from those pots too. Continue?`)) return;
+        if (!confirm('This flavour is used in ' + L.usedInPots + ' pot(s). Deleting will remove it from those pots too. Continue?')) return;
       } else { if (!confirm('Delete this flavour from the library?')) return; }
       try { await api('/api/admin/library/' + id, { method: 'DELETE' }); refresh(); }
       catch (err) { alert('Delete failed: ' + err.message); }
@@ -370,7 +396,7 @@
     }
   });
 
-  // ============ POTS + FLAVORS ============
+  // ============ POTS ============
   function renderPots() {
     const wrap = $('#potList'); wrap.innerHTML = '';
     const lib = (DATA && DATA.library) || [];
@@ -407,65 +433,52 @@
           </div>
           <button class="primary-btn" data-act="save-pot">Save pot</button>
         </div>
-
         <div class="lib-picker">
           <div class="picker-head">
             <strong style="color:var(--ink); letter-spacing:0; text-transform:none; font-size:14px;">Flavours from Library</strong>
             <span style="margin-left:auto; font-size:11px;">${linkedFlavors.length} linked</span>
           </div>
           <div class="linked-rows">
-            ${linkedFlavors.map(f => `
-              <span class="linked-pill ${f.blendType}">${esc(f.name)}
-                <button data-act="unlink" data-lib-id="${esc(f.libraryId)}" title="Remove from this pot">×</button>
-              </span>`).join('')}
+            ${linkedFlavors.map(f => '<span class="linked-pill ' + esc(f.blendType) + '">' + esc(f.name) +
+              '<button data-act="unlink" data-lib-id="' + esc(f.libraryId) + '" title="Remove from this pot">×</button></span>').join('')}
             ${linkedFlavors.length===0 ? '<span style="color:var(--muted); font-size:13px; font-style:italic;">No library flavours linked yet.</span>' : ''}
           </div>
           <input type="text" class="picker-search" placeholder="Search library to add…" data-act="lib-search">
           <div class="lib-options" data-act="lib-options" hidden>
-            ${lib.map(L => `
-              <label class="lib-option" data-lib-id="${esc(L.id)}" data-name="${esc(L.name).toLowerCase()}">
-                <input type="checkbox" ${linkedIds.has(L.id) ? 'checked disabled' : ''}>
-                <span class="name">${esc(L.name)}</span>
-                <span class="blend-chip ${L.blendType}">${L.blendType}</span>
-                <span style="color:var(--muted); font-size:12px;">${L.strengthLabel} · ₹${L.defaultPrice}</span>
-              </label>`).join('')}
+            ${lib.map(L => '<label class="lib-option" data-lib-id="' + esc(L.id) + '" data-name="' + esc(L.name).toLowerCase() + '">' +
+              '<input type="checkbox" ' + (linkedIds.has(L.id) ? 'checked disabled' : '') + '>' +
+              '<span class="name">' + esc(L.name) + '</span>' +
+              '<span class="blend-chip ' + esc(L.blendType) + '">' + esc(L.blendType) + '</span>' +
+              '<span style="color:var(--muted); font-size:12px;">' + esc(L.strengthLabel) + ' · ₹' + L.defaultPrice + '</span>' +
+              '</label>').join('')}
           </div>
           <button class="primary-btn" data-act="link-selected" style="margin-top:8px;">Add selected to pot</button>
         </div>
-
         <div class="flavor-table">
           <div class="picker-head" style="display:flex; align-items:center; gap:8px;">
             <strong style="color:var(--ink); letter-spacing:0; text-transform:none; font-size:14px;">Custom flavours (this pot only)</strong>
           </div>
-          ${inlineFlavors.map(fl => `
-            <div class="flavor-row-v2" data-flavor-id="${esc(fl.id)}">
-              <div class="form-grid" style="margin-bottom:0;">
-                <label>Name<input data-ff="name" value="${esc(fl.name)}"></label>
-                <label>Blend type
-                  <select data-ff="blendType">
-                    <option value="signature" ${fl.blendType==='signature'?'selected':''}>Signature</option>
-                    <option value="imported" ${fl.blendType==='imported'?'selected':''}>Imported</option>
-                  </select>
-                </label>
-                <label>Strength<span data-strength-wrap>${strengthSelectHtml(fl.strengthLabel)}</span></label>
-                <label>Price ₹<input data-ff="price" type="number" value="${fl.price || pot.basePrice || 0}"></label>
-                <label class="full">Image URL
-                  <div class="img-with-upload">
-                    <input data-ff="image" id="fl_img_${fl.id}" value="${esc(fl.image || '')}">
-                    <button type="button" class="ghost-btn" data-upload-target="fl_img_${fl.id}">Upload…</button>
-                  </div>
-                </label>
-                <label class="full">Description<textarea data-ff="description" rows="2">${esc(fl.description || '')}</textarea></label>
-                <label class="full">Taste tags${tagsInputHtml('fl_tags_'+fl.id, fl.tags)}</label>
-                <label style="display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0;">
-                  <input type="checkbox" data-ff="popular" ${fl.popular?'checked':''} style="width:auto;">
-                  Popular (★)
-                </label>
-              </div>
-              <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
-                <button class="del-mini" data-act="del-flavor">Delete</button>
-              </div>
-            </div>`).join('')}
+          ${inlineFlavors.map(fl => '<div class="flavor-row-v2" data-flavor-id="' + esc(fl.id) + '">' +
+            '<div class="form-grid" style="margin-bottom:0;">' +
+              '<label>Name<input data-ff="name" value="' + esc(fl.name) + '"></label>' +
+              '<label>Blend type<select data-ff="blendType">' +
+                '<option value="signature" ' + (fl.blendType==='signature'?'selected':'') + '>Signature</option>' +
+                '<option value="imported" ' + (fl.blendType==='imported'?'selected':'') + '>Imported</option>' +
+              '</select></label>' +
+              '<label>Strength<span data-strength-wrap>' + strengthSelectHtml(fl.strengthLabel) + '</span></label>' +
+              '<label>Price ₹<input data-ff="price" type="number" value="' + (fl.price || pot.basePrice || 0) + '"></label>' +
+              '<label class="full">Image URL<div class="img-with-upload">' +
+                '<input data-ff="image" id="fl_img_' + esc(fl.id) + '" value="' + esc(fl.image || '') + '">' +
+                '<button type="button" class="ghost-btn" data-upload-target="fl_img_' + esc(fl.id) + '">Upload…</button>' +
+              '</div></label>' +
+              '<label class="full">Description<textarea data-ff="description" rows="2">' + esc(fl.description || '') + '</textarea></label>' +
+              '<label class="full">Taste tags' + tagsInputHtml('fl_tags_' + fl.id, fl.tags) + '</label>' +
+              '<label style="display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0;">' +
+                '<input type="checkbox" data-ff="popular" ' + (fl.popular?'checked':'') + ' style="width:auto;">Popular (★)</label>' +
+            '</div>' +
+            '<div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">' +
+              '<button class="del-mini" data-act="del-flavor">Delete</button>' +
+            '</div></div>').join('')}
           <div class="add-flavor-row" data-act="add-flavor">+ Add custom flavour</div>
           ${inlineFlavors.length ? '<div style="margin-top:10px;"><button class="primary-btn" data-act="save-flavors">Save custom flavours</button></div>' : ''}
         </div>
@@ -580,11 +593,10 @@
     (DATA.pairings || []).forEach(p => {
       const div = document.createElement('div');
       div.className = 'pairing-card'; div.dataset.id = p.id;
-      div.innerHTML = `
-        <input data-pf="drink" placeholder="Drink" value="${esc(p.drink)}">
-        <input data-pf="flavor" placeholder="Recommended flavor" value="${esc(p.flavor)}">
-        <textarea data-pf="reason" placeholder="Why it works...">${esc(p.reason)}</textarea>
-        <button class="del-mini" data-act="del-pairing">×</button>`;
+      div.innerHTML = '<input data-pf="drink" placeholder="Drink" value="' + esc(p.drink) + '">' +
+        '<input data-pf="flavor" placeholder="Recommended flavor" value="' + esc(p.flavor) + '">' +
+        '<textarea data-pf="reason" placeholder="Why it works...">' + esc(p.reason) + '</textarea>' +
+        '<button class="del-mini" data-act="del-pairing">×</button>';
       wrap.appendChild(div);
     });
     const saveAll = document.createElement('button');
