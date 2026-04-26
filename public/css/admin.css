@@ -291,14 +291,6 @@ body { font-family: var(--sans); background: var(--bg); color: var(--ink); font-
 }
 .flavor-thumb-cell input:focus { opacity: 1; }
 .ghost-btn.mini { padding: 4px 8px; font-size: 13px; }
-.flavor-img-actions { display: flex; flex-direction: column; gap: 2px; }
-.flavor-img-actions .ghost-btn.mini { padding: 2px 6px; font-size: 12px; line-height: 1; }
-.flavor-img-actions .ai-btn {
-  background: linear-gradient(135deg, #2a1f17, #5a1a1f);
-  color: #f4dba0;
-  border-color: rgba(201,168,106,0.5);
-}
-.flavor-img-actions .ai-btn:hover { background: var(--burgundy); }
 .flavor-row.header {
   font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
   border-bottom: 2px solid var(--border);

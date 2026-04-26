@@ -9,14 +9,14 @@
   "cover": {
     "title": "SMOKZY",
     "subtitle": "The Art of Shisha",
-    "byline": "Curated for Terra Mayaa · Craft Beers & Cocktails",
+    "byline": "Curated for Terra Mayaa \u00b7 Craft Beers & Cocktails",
     "backgroundImage": "https://images.unsplash.com/photo-1574875456553-f4cb02b15c1c?auto=format&fit=crop&w=1600&q=80",
     "openLabel": "Open the menu"
   },
   "founderNote": {
     "title": "A note from the founder",
-    "founderName": "— The Smokzy Team",
-    "body": "When we started Smokzy, we didn't want to be just another shisha lounge. We wanted to bottle a feeling — the slow exhale at the end of a long day, the laughter shared between friends, the lingering memory of a perfectly tuned flavor.\n\nEvery pot in this book has been chosen by hand. Every flavor blended, tested, and re-tested until it was undeniably Smokzy. Tap any flavor to learn its story, its strength, its mood. Find the one that fits yours tonight.\n\nWelcome in. Stay a while.",
+    "founderName": "\u2014 The Smokzy Team",
+    "body": "When we started Smokzy, we didn't want to be just another shisha lounge. We wanted to bottle a feeling \u2014 the slow exhale at the end of a long day, the laughter shared between friends, the lingering memory of a perfectly tuned flavor.\n\nEvery pot in this book has been chosen by hand. Every flavor blended, tested, and re-tested until it was undeniably Smokzy. Tap any flavor to learn its story, its strength, its mood. Find the one that fits yours tonight.\n\nWelcome in. Stay a while.",
     "signatureImage": ""
   },
   "pots": [
@@ -115,7 +115,7 @@
           "category": "tobacco",
           "popular": false,
           "price": 1400,
-          "description": "A serious blend — aged tobacco notes, cocoa, smoked oak. For the experienced palate.",
+          "description": "A serious blend \u2014 aged tobacco notes, cocoa, smoked oak. For the experienced palate.",
           "notes": [
             "bold",
             "smoky",
@@ -188,7 +188,7 @@
       "id": "pair_2",
       "drink": "Espresso Martini",
       "flavor": "Cuban Nights",
-      "reason": "Cocoa and aged tobacco notes mirror the espresso — they finish each other's sentences."
+      "reason": "Cocoa and aged tobacco notes mirror the espresso \u2014 they finish each other's sentences."
     },
     {
       "id": "pair_3",
@@ -212,15 +212,13 @@
       "id": "pair_6",
       "drink": "Beer (Lager)",
       "flavor": "Double Apple",
-      "reason": "A timeless pairing — the malt and the classic apple-anise just work."
+      "reason": "A timeless pairing \u2014 the malt and the classic apple-anise just work."
     }
   ],
   "feedback": [],
   "analytics": {
-    "totalViews": 3,
-    "uniqueVisitors": [
-      "v_drc2hxbrxyqmodzed0f"
-    ],
+    "totalViews": 0,
+    "uniqueVisitors": [],
     "flavorViews": {},
     "hourlyTraffic": [
       0,
@@ -240,7 +238,7 @@
       0,
       0,
       0,
-      3,
+      0,
       0,
       0,
       0,
@@ -248,8 +246,6 @@
       0,
       0
     ],
-    "dailyTraffic": {
-      "2026-04-25": 3
-    }
+    "dailyTraffic": {}
   }
 }

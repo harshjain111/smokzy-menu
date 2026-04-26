@@ -70,37 +70,7 @@ Every change in the admin saves to `data.json` instantly and is reflected on the
 
 ### Image uploads
 
-Anywhere you see an "Upload…" button (cover background, Smokzy logo, partner logo, pot image, flavor image), you can upload a PNG/JPG/SVG up to 8MB. Files are saved into `public/uploads/` and served from your domain — no external image host needed.
-
-### AI image generation (optional)
-
-Each flavor row has a `✨` button. Click it and the server will use OpenAI's `dall-e-3` to generate a moody, on-brand photo of that flavor's components based on its name and description, save it to `public/uploads/`, and attach it to the flavor automatically.
-
-To enable it, set the `OPENAI_API_KEY` environment variable before starting the server.
-
-**Windows (Command Prompt):**
-
-```
-set OPENAI_API_KEY=sk-your-key-here
-npm start
-```
-
-**Windows (PowerShell):**
-
-```
-$env:OPENAI_API_KEY = "sk-your-key-here"
-npm start
-```
-
-**macOS / Linux:**
-
-```
-OPENAI_API_KEY=sk-your-key-here npm start
-```
-
-Get a key at <https://platform.openai.com/api-keys>. Each generation costs about ₹3-4 (USD 0.04) at current dall-e-3 pricing. If the key isn't set, the `✨` button will tell you exactly what to do — the rest of the app keeps working.
-
-To make the key permanent on a deployed server, add it to your hosting platform's environment variables (Render, Railway, Fly all have a UI for this).
+Anywhere you see an "Upload…" button (cover background, Smokzy logo, partner logo, pot image, flavor image), you can upload a PNG/JPG/SVG up to 8MB. In production these go straight to Supabase Storage and are served from your Supabase CDN.
 
 ## Analytics that get tracked
 

@@ -1,14 +1,16 @@
 {
   "name": "smokzy-menu",
-  "version": "1.0.0",
-  "description": "Smokzy interactive flip-book digital menu with admin panel and analytics",
+  "version": "2.0.0",
+  "description": "Smokzy interactive flip-book menu — Supabase + Vercel",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "seed": "node scripts/seed.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
     "express": "^4.19.2",
     "cookie-parser": "^1.4.6",
     "multer": "^1.4.5-lts.1"

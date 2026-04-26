@@ -1,11 +1,10 @@
-// Smokzy Admin — login, CRUD, dashboard, image uploads, AI generation
+// Smokzy Admin — login, CRUD, dashboard, image uploads
 (() => {
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   let DATA = null;
-  let AI_ENABLED = false;
 
   async function api(path, opts) {
     opts = opts || {};
@@ -22,7 +21,6 @@
   async function checkAuth() {
     try {
       const j = await api('/api/admin/me');
-      AI_ENABLED = !!j.aiEnabled;
       if (j.admin) showApp(); else showLogin();
     } catch (e) { showLogin(); }
   }
@@ -36,8 +34,6 @@
     btn.disabled = true;
     try {
       await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: $('#loginPw').value }) });
-      const me = await api('/api/admin/me');
-      AI_ENABLED = !!me.aiEnabled;
       showApp();
     } catch (err) { $('#loginErr').textContent = err.message || 'Wrong password'; }
     finally { btn.disabled = false; }
@@ -56,16 +52,12 @@
 
   async function refresh() {
     DATA = await api('/api/admin/data');
-    renderSettings();
-    renderCover();
-    renderFounder();
-    renderPots();
-    renderPairings();
-    renderFeedback();
+    renderSettings(); renderCover(); renderFounder();
+    renderPots(); renderPairings(); renderFeedback();
     loadDashboard();
   }
 
-  // --- IMAGE UPLOAD (delegated) ---
+  // delegated upload (any element with data-upload-target="<inputId>")
   document.addEventListener('click', e => {
     const btn = e.target.closest('[data-upload-target]');
     if (!btn) return;
@@ -96,31 +88,7 @@
     fi.click();
   });
 
-  // --- AI image generation per flavor ---
-  document.addEventListener('click', async e => {
-    const btn = e.target.closest('[data-ai-flavor]');
-    if (!btn) return;
-    e.preventDefault();
-    const potId = btn.dataset.potId;
-    const flavorId = btn.dataset.flavorId;
-    if (!AI_ENABLED) {
-      alert('AI image generation is not enabled.\n\nTo enable it:\n1. Stop the server\n2. Set the OPENAI_API_KEY environment variable\n3. Restart with `npm start`\n\nWindows example:\n  set OPENAI_API_KEY=sk-... && npm start');
-      return;
-    }
-    const orig = btn.textContent;
-    btn.disabled = true; btn.textContent = 'Generating…';
-    try {
-      const j = await api('/api/admin/generate-flavor-image', {
-        method: 'POST', body: JSON.stringify({ potId, flavorId })
-      });
-      flash('Image generated ✓');
-      refresh();
-    } catch (err) {
-      alert('AI generation failed: ' + err.message);
-    } finally { btn.disabled = false; btn.textContent = orig; }
-  });
-
-  // --- SETTINGS ---
+  // SETTINGS
   function renderSettings() {
     const s = (DATA && DATA.settings) || {};
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
@@ -148,7 +116,7 @@
     } catch (err) { alert(err.message); }
   });
 
-  // --- COVER + FOUNDER ---
+  // COVER + FOUNDER
   function renderCover() {
     const c = (DATA && DATA.cover) || {};
     $('#cv_title').value = c.title || ''; $('#cv_subtitle').value = c.subtitle || '';
@@ -179,7 +147,7 @@
     } catch (err) { alert(err.message); }
   });
 
-  // --- POTS + FLAVORS ---
+  // POTS + FLAVORS
   function renderPots() {
     const wrap = $('#potList'); wrap.innerHTML = '';
     (DATA.pots || []).forEach(pot => {
@@ -221,10 +189,7 @@
               <div class="flavor-thumb-cell">
                 <div class="flavor-thumb" style="background-image:url('${esc(fl.image || '')}')"></div>
                 <input data-ff="image" id="fl_img_${fl.id}" value="${esc(fl.image || '')}" placeholder="URL or upload">
-                <div class="flavor-img-actions">
-                  <button type="button" class="ghost-btn mini" data-upload-target="fl_img_${fl.id}" title="Upload image">↑</button>
-                  <button type="button" class="ghost-btn mini ai-btn" data-ai-flavor data-pot-id="${esc(pot.id)}" data-flavor-id="${esc(fl.id)}" title="${AI_ENABLED ? 'Generate image with AI' : 'AI disabled — set OPENAI_API_KEY'}">${AI_ENABLED ? '✨' : '✨'}</button>
-                </div>
+                <button type="button" class="ghost-btn mini" data-upload-target="fl_img_${fl.id}" title="Upload image">↑</button>
               </div>
               <input data-ff="name" value="${esc(fl.name)}">
               <input data-ff="strength" type="number" min="1" max="10" value="${fl.strength || 5}">
@@ -242,18 +207,15 @@
   }
 
   $('#addPot').addEventListener('click', async () => {
-    const name = prompt('Name for the new pot?');
-    if (!name) return;
+    const name = prompt('Name for the new pot?'); if (!name) return;
     await api('/api/admin/pots', { method: 'POST', body: JSON.stringify({ name, tagline: '', basePrice: 0 }) });
     refresh();
   });
 
   $('#potList').addEventListener('click', async e => {
-    const card = e.target.closest('.pot-card');
-    if (!card) return;
+    const card = e.target.closest('.pot-card'); if (!card) return;
     const potId = card.dataset.id;
-    const act = e.target.dataset.act;
-    if (!act) return;
+    const act = e.target.dataset.act; if (!act) return;
     e.preventDefault();
     if (act === 'edit-pot') { card.classList.toggle('editing'); return; }
     if (act === 'del-pot') {
@@ -299,7 +261,7 @@
     }
   });
 
-  // --- PAIRINGS ---
+  // PAIRINGS
   function renderPairings() {
     const wrap = $('#pairingList'); wrap.innerHTML = '';
     (DATA.pairings || []).forEach(p => {
@@ -342,7 +304,7 @@
     }
   });
 
-  // --- FEEDBACK ---
+  // FEEDBACK
   function renderFeedback() {
     const wrap = $('#feedbackList');
     if (!DATA.feedback || !DATA.feedback.length) {
@@ -374,7 +336,7 @@
     }
   });
 
-  // --- DASHBOARD ---
+  // DASHBOARD
   async function loadDashboard() {
     let a;
     try { a = await api('/api/admin/analytics'); } catch (e) { return; }
