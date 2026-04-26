@@ -20,32 +20,31 @@
     return d;
   };
 
-  // ---------- renderers ----------
   function renderCover(c) {
     const bg = c && c.backgroundImage ? "url('" + esc(c.backgroundImage) + "')" : '';
     const s = (window.__menuData && window.__menuData.settings) || {};
-    const logo = s.logoUrl
+    const smokzyLogo = s.logoUrl
       ? '<div class="logo-img" style="background-image:url(\'' + esc(s.logoUrl) + '\')"></div>'
       : '<div class="crest">S</div>';
-    const partner = s.partnerName ? (
-      '<div class="partner-strip">' +
-        '<div class="partner-line">Presented at</div>' +
-        (s.partnerLogoUrl ? '<div class="partner-logo" style="background-image:url(\'' + esc(s.partnerLogoUrl) + '\')"></div>' : '') +
-        '<div class="partner-name">' + esc(s.partnerName) + '</div>' +
-      '</div>') : '';
+    const partnerLogo = s.partnerLogoUrl
+      ? '<div class="logo-img" style="background-image:url(\'' + esc(s.partnerLogoUrl) + '\')"></div>'
+      : '';
+    const logoRow = '<div class="cover-logos">' + smokzyLogo +
+      (partnerLogo ? '<div class="cover-logo-divider"></div>' + partnerLogo : '') +
+      '</div>';
+    const curation = s.partnerName
+      ? '<div class="curation">curated exclusively for <em>' + esc(s.partnerName) + '</em></div>'
+      : '';
     return face('cover front',
       '<div class="cover-bg" style="background-image:' + (bg ? 'linear-gradient(135deg,rgba(0,0,0,.7),rgba(0,0,0,.35)),' + bg : 'none') + '"></div>' +
       '<div class="leather"></div>' +
       '<div class="leather-frame"></div>' +
       '<div class="cover-inner">' +
-        logo +
-        '<h1>' + esc((c && c.title) || 'SMOKZY') + '</h1>' +
-        '<div class="sub">' + esc((c && c.subtitle) || 'The Art of Shisha') + '</div>' +
-        '<div class="byline">' + esc((c && c.byline) || 'An Interactive Flavor Journal') + '</div>' +
-        partner +
-        '<div class="openLabel">' + esc((c && c.openLabel) || 'Tap to open') + ' →</div>' +
-      '</div>' +
-      '<span class="page-tag" style="color:var(--gold-bright);">SMOKZY</span>');
+        logoRow +
+        '<h1>SHISHA MENU</h1>' +
+        curation +
+        '<div class="openLabel">' + esc((c && c.openLabel) || 'Open the menu') + ' →</div>' +
+      '</div>');
   }
 
   function renderFounderQuote() {
@@ -82,7 +81,6 @@
 
   function renderPotFlavors(pot, pageNum) {
     const flavors = pot.flavors || [];
-    // density class: bigger when many flavors so they all fit without scrolling
     const dCls = flavors.length > 12 ? 'dense-3' :
                  flavors.length > 6  ? 'dense-2' : 'dense-1';
     const items = flavors.map(fl => {
@@ -170,12 +168,14 @@
 
   function renderBackCover() {
     const s = (window.__menuData && window.__menuData.settings) || {};
-    const logo = s.logoUrl
+    const smokzyLogo = s.logoUrl
       ? '<div class="logo-img" style="background-image:url(\'' + esc(s.logoUrl) + '\'); width:64px; height:64px;"></div>'
       : '<div class="crest" style="margin-bottom:14px;">S</div>';
+    const partnerLogo = s.partnerLogoUrl
+      ? '<div class="logo-img" style="background-image:url(\'' + esc(s.partnerLogoUrl) + '\'); width:64px; height:64px;"></div>'
+      : '';
     const partner = s.partnerName ? (
       '<div class="partner-strip" style="margin-top:30px;">' +
-        (s.partnerLogoUrl ? '<div class="partner-logo" style="background-image:url(\'' + esc(s.partnerLogoUrl) + '\')"></div>' : '') +
         '<div class="partner-line" style="color:rgba(255,255,255,0.6);">In partnership with</div>' +
         '<div class="partner-name">' + esc(s.partnerName) + '</div>' +
       '</div>') : '';
@@ -183,14 +183,15 @@
       '<div class="leather"></div>' +
       '<div class="leather-frame"></div>' +
       '<div class="cover-inner">' +
-        logo +
-        '<h3>' + esc(s.brandName || 'SMOKZY') + '</h3>' +
+        '<div class="cover-logos">' + smokzyLogo +
+          (partnerLogo ? '<div class="cover-logo-divider"></div>' + partnerLogo : '') +
+        '</div>' +
+        '<h3 style="margin-top:18px;">SHISHA MENU</h3>' +
         '<p>' + esc(s.tagline || 'The Art of Shisha') + '</p>' +
         partner +
       '</div>');
   }
 
-  // ---------- assembly ----------
   function buildLeaves(data) {
     const leaves = [];
     const pots = data.pots || [];
@@ -228,7 +229,6 @@
     });
   }
 
-  // ---------- nav with safe back-flip ----------
   let leaves = [];
   let current = 0;
   let animating = false;
@@ -275,7 +275,6 @@
     if (current > 0) $('#hint').style.opacity = 0;
   }
 
-  // ---------- flavor modal ----------
   const modal = $('#flavorModal');
   function openFlavor(potId, flavorId) {
     const pot = ((window.__menuData && window.__menuData.pots) || []).find(p => p.id === potId);
@@ -309,7 +308,6 @@
     }).catch(()=>{});
   }
 
-  // Auto-generated flavor "icon" when no image — uses category + first letter
   function flavorIconSvg(fl) {
     const palette = {
       fruit: ['#f49b6f', '#c54b3a'], mint: ['#9be0b6', '#1f6d4a'],
