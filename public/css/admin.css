@@ -15,6 +15,9 @@
 html, body { margin:0; height: 100%; }
 body { font-family: var(--sans); background: var(--bg); color: var(--ink); font-size: 14px; }
 
+/* Force `hidden` attribute to actually hide elements even when class CSS sets display */
+[hidden] { display: none !important; }
+
 /* ---------- LOGIN ---------- */
 .login {
   min-height: 100vh;
