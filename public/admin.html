@@ -199,6 +199,62 @@
     </main>
   </div>
 
-  <script src="/js/admin.js?v=4"></script>
+  <!-- ========== NEW FLAVOUR MODAL ========== -->
+  <div id="newFlavourModal" class="ax-modal" hidden>
+    <div class="ax-backdrop" data-ax-close></div>
+    <div class="ax-card">
+      <div class="ax-card-head">
+        <h3>Add a flavour to the Library</h3>
+        <button class="ax-x" data-ax-close>×</button>
+      </div>
+      <p class="muted" style="margin:0 0 14px;">Define this flavour once. You can attach it to any pot from the Pots tab — no retyping.</p>
+      <form id="newFlavourForm">
+        <div class="form-grid">
+          <label>Name<input name="name" required placeholder="e.g. Nawab"></label>
+          <label>Blend type
+            <select name="blendType">
+              <option value="signature">Signature</option>
+              <option value="imported">Imported</option>
+            </select>
+          </label>
+          <label>Strength
+            <select name="strengthLabel">
+              <option value="light">Light</option>
+              <option value="mild" selected>Mild</option>
+              <option value="strong">Strong</option>
+            </select>
+          </label>
+          <label>Default price (₹)<input name="defaultPrice" type="number" value="0"></label>
+          <label class="full">Image URL
+            <div class="img-with-upload">
+              <input name="image" id="nf_image">
+              <button type="button" class="ghost-btn" data-upload-target="nf_image">Upload…</button>
+            </div>
+          </label>
+          <label class="full">Description / tasting notes<textarea name="description" rows="3" placeholder="Smooth tobacco wrapped around rose and saffron, with a long honeyed finish..."></textarea></label>
+          <label class="full">Taste tags
+            <div class="tag-input" data-tags-for="nf_tags">
+              <div class="tag-pills"></div>
+              <input type="text" placeholder="add tag + Enter (or pick below)" class="tag-text">
+              <div class="tag-presets">
+                <!-- presets injected by JS -->
+              </div>
+            </div>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0;">
+            <input type="checkbox" name="popular" style="width:auto;">
+            Mark as popular (★)
+          </label>
+        </div>
+        <div class="ax-err" id="nf_err"></div>
+        <div class="ax-actions">
+          <button type="button" class="ghost-btn" data-ax-close>Cancel</button>
+          <button type="submit" class="primary-btn" id="nf_submit">Add to library</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/admin.js?v=5"></script>
 </body>
 </html>

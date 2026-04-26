@@ -1,10 +1,9 @@
-// Smokzy Admin — login, CRUD, dashboard, library, tags, strength labels
+// Smokzy Admin — login, CRUD, dashboard, library, tags, strength labels, modal
 (() => {
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  // Preset tag suggestions for the pill input
   const TAG_PRESETS = ['minty','fruity','floral','ice','sweet','earthy','smoky','citrus','berry','cream','spicy','herbal','tropical','tobacco'];
 
   let DATA = null;
@@ -22,10 +21,8 @@
   }
 
   async function checkAuth() {
-    try {
-      const j = await api('/api/admin/me');
-      if (j.admin) showApp(); else showLogin();
-    } catch (e) { showLogin(); }
+    try { const j = await api('/api/admin/me'); if (j.admin) showApp(); else showLogin(); }
+    catch (e) { showLogin(); }
   }
   function showLogin() { $('#loginScreen').hidden = false; $('#adminApp').hidden = true; }
   function showApp()   { $('#loginScreen').hidden = true;  $('#adminApp').hidden = false; refresh(); }
@@ -60,9 +57,9 @@
     loadDashboard();
   }
 
-  // ---- helpers shared by library + custom flavour rows ----
+  // ---- helpers ----
   function tagsInputHtml(id, tags) {
-    const ts = (tags || []).map(t => '<span class="tag-pill">' + esc(t) + '<button type="button" data-act="del-tag" data-tag="' + esc(t) + '">×</button></span>').join('');
+    const ts = (tags || []).map(t => '<span class="tag-pill" data-tag="' + esc(t) + '">' + esc(t) + '<button type="button" data-act="del-tag" data-tag="' + esc(t) + '">×</button></span>').join('');
     return `
       <div class="tag-input" data-tags-for="${esc(id)}">
         <div class="tag-pills">${ts}</div>
@@ -74,15 +71,14 @@
   }
   function strengthSelectHtml(value) {
     const v = (value || 'mild').toLowerCase();
-    return `
-      <select class="strength-select">
-        <option value="light"  ${v==='light'?'selected':''}>Light</option>
-        <option value="mild"   ${v==='mild'?'selected':''}>Mild</option>
-        <option value="strong" ${v==='strong'?'selected':''}>Strong</option>
-      </select>`;
+    return `<select class="strength-select">
+      <option value="light"  ${v==='light'?'selected':''}>Light</option>
+      <option value="mild"   ${v==='mild'?'selected':''}>Mild</option>
+      <option value="strong" ${v==='strong'?'selected':''}>Strong</option>
+    </select>`;
   }
 
-  // delegated upload (unchanged)
+  // delegated upload (any element with data-upload-target="<inputId>")
   document.addEventListener('click', e => {
     const btn = e.target.closest('[data-upload-target]');
     if (!btn) return;
@@ -99,11 +95,14 @@
         const r = await fetch('/api/admin/upload', { method: 'POST', body: fd, credentials: 'same-origin' });
         const j = await r.json();
         if (!r.ok) throw new Error(j.error || 'upload failed');
-        const target = document.getElementById(targetId);
-        if (target) {
-          target.value = j.url;
-          target.dispatchEvent(new Event('input', { bubbles: true }));
-          target.dispatchEvent(new Event('change', { bubbles: true }));
+        const target = document.getElementById(targetId) || document.querySelector('[name="' + targetId + '"]') || document.querySelector('[id="' + targetId + '"]');
+        // also try inside modal forms by name
+        const inModal = document.querySelector('input[name="image"]#' + CSS.escape(targetId));
+        const finalTarget = target || inModal;
+        if (finalTarget) {
+          finalTarget.value = j.url;
+          finalTarget.dispatchEvent(new Event('input', { bubbles: true }));
+          finalTarget.dispatchEvent(new Event('change', { bubbles: true }));
         }
         if (DATA) {
           if (targetId === 'set_logoUrl' && DATA.settings)        DATA.settings.logoUrl = j.url;
@@ -120,7 +119,7 @@
           })});
           flash('Uploaded & saved ✓');
         } else {
-          flash('Uploaded ✓ — click Save to persist');
+          flash('Uploaded ✓');
         }
         renderSettings();
       } catch (err) { alert('Upload failed: ' + err.message); }
@@ -136,40 +135,89 @@
     e.preventDefault();
     const tag = e.target.value.trim().toLowerCase();
     if (!tag) return;
-    const wrap = e.target.closest('.tag-input');
-    addTagToInput(wrap, tag);
+    addTagToInput(e.target.closest('.tag-input'), tag);
     e.target.value = '';
   });
   document.addEventListener('click', e => {
     const presetBtn = e.target.closest('[data-act="add-preset"]');
     if (presetBtn) {
       e.preventDefault();
-      const wrap = presetBtn.closest('.tag-input');
-      addTagToInput(wrap, presetBtn.dataset.tag);
+      addTagToInput(presetBtn.closest('.tag-input'), presetBtn.dataset.tag);
       return;
     }
     const delBtn = e.target.closest('[data-act="del-tag"]');
-    if (delBtn) {
-      e.preventDefault();
-      delBtn.parentElement.remove();
-      return;
-    }
+    if (delBtn) { e.preventDefault(); delBtn.parentElement.remove(); return; }
   });
   function addTagToInput(wrap, tag) {
     if (!wrap) return;
-    const existing = $$('.tag-pill', wrap).map(p => p.dataset.tag || p.textContent.replace(/×$/, '').trim());
+    const existing = $$('.tag-pill', wrap).map(p => p.dataset.tag);
     if (existing.includes(tag)) return;
     const pills = $('.tag-pills', wrap);
     const span = document.createElement('span');
-    span.className = 'tag-pill';
-    span.dataset.tag = tag;
+    span.className = 'tag-pill'; span.dataset.tag = tag;
     span.innerHTML = esc(tag) + '<button type="button" data-act="del-tag" data-tag="' + esc(tag) + '">×</button>';
     pills.appendChild(span);
   }
   function readTagsFrom(wrap) {
     if (!wrap) return [];
-    return $$('.tag-pill', wrap).map(p => p.dataset.tag || p.textContent.replace(/×$/, '').trim()).filter(Boolean);
+    return $$('.tag-pill', wrap).map(p => p.dataset.tag).filter(Boolean);
   }
+
+  // ============ NEW FLAVOUR MODAL ============
+  function openNewFlavourModal() {
+    const modal = $('#newFlavourModal');
+    if (!modal) return;
+    const form = $('#newFlavourForm');
+    form.reset();
+    $('#nf_err').textContent = '';
+    modal.querySelector('.tag-pills').innerHTML = '';
+    modal.hidden = false;
+    setTimeout(() => modal.querySelector('input[name="name"]').focus(), 50);
+  }
+  function closeNewFlavourModal() {
+    const modal = $('#newFlavourModal');
+    if (modal) modal.hidden = true;
+  }
+  $('#addLibrary').addEventListener('click', e => { e.preventDefault(); openNewFlavourModal(); });
+  document.addEventListener('click', e => {
+    if (e.target.matches('[data-ax-close]')) { e.preventDefault(); closeNewFlavourModal(); }
+  });
+  document.addEventListener('keydown', e => {
+    const m = $('#newFlavourModal');
+    if (e.key === 'Escape' && m && !m.hidden) closeNewFlavourModal();
+  });
+  $('#newFlavourForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const form = e.target;
+    const submitBtn = $('#nf_submit');
+    const errBox = $('#nf_err');
+    errBox.textContent = '';
+    submitBtn.disabled = true; submitBtn.textContent = 'Adding…';
+    try {
+      const fd = new FormData(form);
+      const tagsWrap = form.querySelector('.tag-input');
+      const payload = {
+        name: (fd.get('name') || '').trim(),
+        blendType: fd.get('blendType') || 'signature',
+        strengthLabel: fd.get('strengthLabel') || 'mild',
+        defaultPrice: Number(fd.get('defaultPrice') || 0),
+        image: fd.get('image') || '',
+        description: fd.get('description') || '',
+        popular: !!fd.get('popular'),
+        tags: readTagsFrom(tagsWrap)
+      };
+      if (!payload.name) { errBox.textContent = 'Name is required.'; return; }
+      await api('/api/admin/library', { method: 'POST', body: JSON.stringify(payload) });
+      flash('Flavour added to library ✓');
+      closeNewFlavourModal();
+      refresh();
+    } catch (err) {
+      errBox.innerHTML = 'Could not save: ' + esc(err.message) +
+        '<br><span style="color:var(--muted); font-size:12px;">If this mentions "column does not exist", run <strong>lib/schema-v3.sql</strong> in your Supabase SQL editor first.</span>';
+    } finally {
+      submitBtn.disabled = false; submitBtn.textContent = 'Add to library';
+    }
+  });
 
   // ---- SETTINGS ----
   function renderSettings() {
@@ -194,7 +242,7 @@
         partnerLogoUrl: document.getElementById('set_partnerLogoUrl').value
       })});
       flash('Branding saved'); refresh();
-    } catch (err) { alert(err.message); }
+    } catch (err) { alert('Save failed: ' + err.message); }
   });
 
   // ---- COVER + FOUNDER ----
@@ -217,7 +265,7 @@
         openLabel: $('#cv_open').value
       })});
       flash('Cover saved');
-    } catch (err) { alert(err.message); }
+    } catch (err) { alert('Save failed: ' + err.message); }
   });
   $('#saveFounder').addEventListener('click', async () => {
     try {
@@ -225,10 +273,10 @@
         title: $('#fn_title').value, founderName: $('#fn_name').value, body: $('#fn_body').value
       })});
       flash('Founder note saved');
-    } catch (err) { alert(err.message); }
+    } catch (err) { alert('Save failed: ' + err.message); }
   });
 
-  // ============ FLAVOUR LIBRARY ============
+  // ============ LIBRARY LIST ============
   function renderLibrary() {
     const wrap = $('#libraryList');
     if (!wrap) return;
@@ -246,7 +294,7 @@
             ${(L.tags||[]).length ? '<div style="margin-top:4px;">' + (L.tags||[]).map(t=>`<span class="tag-pill view">${esc(t)}</span>`).join('') + '</div>' : ''}
           </div>
           <div><span class="blend-chip ${L.blendType}">${L.blendType}</span></div>
-          <div style="font-size:13px;color:var(--muted);"><span class="strength-chip ${L.strengthLabel}">${L.strengthLabel}</span></div>
+          <div><span class="strength-chip ${L.strengthLabel}">${L.strengthLabel}</span></div>
           <div style="font-size:13px;color:var(--muted);">₹${L.defaultPrice}</div>
           <div style="font-size:12px;color:var(--muted);">in ${L.usedInPots} pot${L.usedInPots===1?'':'s'}</div>
           <div class="lib-row-actions">
@@ -284,31 +332,22 @@
     `).join('');
   }
 
-  $('#addLibrary').addEventListener('click', async () => {
-    const name = prompt('Flavour name? (you can fill the rest after)');
-    if (!name) return;
-    await api('/api/admin/library', { method: 'POST', body: JSON.stringify({ name, blendType: 'signature', strengthLabel: 'mild' }) });
-    refresh();
-  });
-
   $('#libraryList').addEventListener('click', async e => {
     const card = e.target.closest('.library-card');
     if (!card) return;
     const id = card.dataset.id;
     const act = e.target.dataset.act;
     if (!act) return;
-    if (act === 'add-preset' || act === 'del-tag') return; // tag handlers run elsewhere
+    if (act === 'add-preset' || act === 'del-tag') return;
     e.preventDefault();
     if (act === 'edit-lib') { card.classList.toggle('editing'); return; }
     if (act === 'del-lib') {
       const L = (DATA.library || []).find(x => x.id === id);
       if (L && L.usedInPots > 0) {
         if (!confirm(`This flavour is used in ${L.usedInPots} pot(s). Deleting will remove it from those pots too. Continue?`)) return;
-      } else {
-        if (!confirm('Delete this flavour from the library?')) return;
-      }
-      await api('/api/admin/library/' + id, { method: 'DELETE' });
-      refresh();
+      } else { if (!confirm('Delete this flavour from the library?')) return; }
+      try { await api('/api/admin/library/' + id, { method: 'DELETE' }); refresh(); }
+      catch (err) { alert('Delete failed: ' + err.message); }
       return;
     }
     if (act === 'save-lib') {
@@ -325,9 +364,9 @@
       if (ss) fields.strengthLabel = ss.value;
       const ti = wrap.querySelector('.tag-input');
       if (ti) fields.tags = readTagsFrom(ti);
-      await api('/api/admin/library/' + id, { method: 'PUT', body: JSON.stringify(fields) });
-      flash('Library flavour saved');
-      refresh();
+      try { await api('/api/admin/library/' + id, { method: 'PUT', body: JSON.stringify(fields) });
+        flash('Library flavour saved'); refresh(); }
+      catch (err) { alert('Save failed: ' + err.message); }
     }
   });
 
@@ -398,7 +437,7 @@
           <div class="picker-head" style="display:flex; align-items:center; gap:8px;">
             <strong style="color:var(--ink); letter-spacing:0; text-transform:none; font-size:14px;">Custom flavours (this pot only)</strong>
           </div>
-          ${inlineFlavors.map((fl, idx) => `
+          ${inlineFlavors.map(fl => `
             <div class="flavor-row-v2" data-flavor-id="${esc(fl.id)}">
               <div class="form-grid" style="margin-bottom:0;">
                 <label>Name<input data-ff="name" value="${esc(fl.name)}"></label>
@@ -426,8 +465,7 @@
               <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
                 <button class="del-mini" data-act="del-flavor">Delete</button>
               </div>
-            </div>
-          `).join('')}
+            </div>`).join('')}
           <div class="add-flavor-row" data-act="add-flavor">+ Add custom flavour</div>
           ${inlineFlavors.length ? '<div style="margin-top:10px;"><button class="primary-btn" data-act="save-flavors">Save custom flavours</button></div>' : ''}
         </div>
@@ -438,8 +476,8 @@
 
   $('#addPot').addEventListener('click', async () => {
     const name = prompt('Name for the new pot?'); if (!name) return;
-    await api('/api/admin/pots', { method: 'POST', body: JSON.stringify({ name, tagline: '', basePrice: 0 }) });
-    refresh();
+    try { await api('/api/admin/pots', { method: 'POST', body: JSON.stringify({ name, tagline: '', basePrice: 0 }) }); refresh(); }
+    catch (err) { alert('Add pot failed: ' + err.message); }
   });
 
   $('#potList').addEventListener('click', async e => {
@@ -451,7 +489,8 @@
     if (act === 'edit-pot') { card.classList.toggle('editing'); return; }
     if (act === 'del-pot') {
       if (confirm('Delete this pot and all its flavors?')) {
-        await api('/api/admin/pots/' + potId, { method: 'DELETE' }); refresh();
+        try { await api('/api/admin/pots/' + potId, { method: 'DELETE' }); refresh(); }
+        catch (err) { alert('Delete failed: ' + err.message); }
       } return;
     }
     if (act === 'save-pot') {
@@ -460,55 +499,60 @@
         let v = el.value; if (el.type === 'number') v = +v;
         fields[el.dataset.f] = v;
       });
-      await api('/api/admin/pots/' + potId, { method: 'PUT', body: JSON.stringify(fields) });
-      flash('Pot saved'); refresh(); return;
+      try { await api('/api/admin/pots/' + potId, { method: 'PUT', body: JSON.stringify(fields) }); flash('Pot saved'); refresh(); }
+      catch (err) { alert('Save failed: ' + err.message); }
+      return;
     }
     if (act === 'add-flavor') {
       const name = prompt('Custom flavour name?'); if (!name) return;
-      await api('/api/admin/pots/' + potId + '/flavors', { method: 'POST', body: JSON.stringify({ name, strengthLabel: 'mild' }) });
-      refresh(); return;
+      try { await api('/api/admin/pots/' + potId + '/flavors', { method: 'POST', body: JSON.stringify({ name, strengthLabel: 'mild' }) }); refresh(); }
+      catch (err) { alert('Add flavour failed: ' + err.message); }
+      return;
     }
     if (act === 'del-flavor') {
       const row = e.target.closest('.flavor-row-v2'); const flavorId = row.dataset.flavorId;
       if (confirm('Delete this custom flavour?')) {
-        await api('/api/admin/pots/' + potId + '/flavors/' + flavorId, { method: 'DELETE' }); refresh();
+        try { await api('/api/admin/pots/' + potId + '/flavors/' + flavorId, { method: 'DELETE' }); refresh(); }
+        catch (err) { alert('Delete failed: ' + err.message); }
       } return;
     }
     if (act === 'save-flavors') {
       const rows = card.querySelectorAll('.flavor-row-v2[data-flavor-id]');
-      for (const row of rows) {
-        const flavorId = row.dataset.flavorId;
-        const fields = {};
-        row.querySelectorAll('[data-ff]').forEach(el => {
-          let v;
-          if (el.type === 'checkbox') v = el.checked;
-          else if (el.type === 'number') v = +el.value;
-          else v = el.value;
-          fields[el.dataset.ff] = v;
-        });
-        const ss = row.querySelector('.strength-select');
-        if (ss) fields.strengthLabel = ss.value;
-        const ti = row.querySelector('.tag-input');
-        if (ti) fields.tags = readTagsFrom(ti);
-        await api('/api/admin/pots/' + potId + '/flavors/' + flavorId, { method: 'PUT', body: JSON.stringify(fields) });
-      }
-      flash('Flavours saved'); refresh(); return;
+      try {
+        for (const row of rows) {
+          const flavorId = row.dataset.flavorId;
+          const fields = {};
+          row.querySelectorAll('[data-ff]').forEach(el => {
+            let v;
+            if (el.type === 'checkbox') v = el.checked;
+            else if (el.type === 'number') v = +el.value;
+            else v = el.value;
+            fields[el.dataset.ff] = v;
+          });
+          const ss = row.querySelector('.strength-select');
+          if (ss) fields.strengthLabel = ss.value;
+          const ti = row.querySelector('.tag-input');
+          if (ti) fields.tags = readTagsFrom(ti);
+          await api('/api/admin/pots/' + potId + '/flavors/' + flavorId, { method: 'PUT', body: JSON.stringify(fields) });
+        }
+        flash('Flavours saved'); refresh();
+      } catch (err) { alert('Save failed: ' + err.message); }
+      return;
     }
     if (act === 'unlink') {
       const libId = e.target.dataset.libId;
       if (confirm('Remove this library flavour from this pot? (the master flavour stays in your library)')) {
-        await api('/api/admin/pots/' + potId + '/library/' + libId, { method: 'DELETE' });
-        refresh();
-      }
-      return;
+        try { await api('/api/admin/pots/' + potId + '/library/' + libId, { method: 'DELETE' }); refresh(); }
+        catch (err) { alert('Unlink failed: ' + err.message); }
+      } return;
     }
     if (act === 'link-selected') {
       const opts = card.querySelectorAll('.lib-option input[type=checkbox]:not(:disabled):checked');
       const ids = Array.from(opts).map(cb => cb.closest('.lib-option').dataset.libId);
       if (!ids.length) { alert('Pick at least one flavour from the list first.'); return; }
-      await api('/api/admin/pots/' + potId + '/library', { method: 'POST', body: JSON.stringify({ libraryIds: ids }) });
-      flash('Linked ' + ids.length + ' flavour' + (ids.length===1?'':'s'));
-      refresh();
+      try { await api('/api/admin/pots/' + potId + '/library', { method: 'POST', body: JSON.stringify({ libraryIds: ids }) });
+        flash('Linked ' + ids.length + ' flavour' + (ids.length===1?'':'s')); refresh(); }
+      catch (err) { alert('Link failed: ' + err.message); }
       return;
     }
   });
@@ -540,8 +584,7 @@
         <input data-pf="drink" placeholder="Drink" value="${esc(p.drink)}">
         <input data-pf="flavor" placeholder="Recommended flavor" value="${esc(p.flavor)}">
         <textarea data-pf="reason" placeholder="Why it works...">${esc(p.reason)}</textarea>
-        <button class="del-mini" data-act="del-pairing">×</button>
-      `;
+        <button class="del-mini" data-act="del-pairing">×</button>`;
       wrap.appendChild(div);
     });
     const saveAll = document.createElement('button');
@@ -550,26 +593,29 @@
     wrap.appendChild(saveAll);
   }
   $('#addPairing').addEventListener('click', async () => {
-    await api('/api/admin/pairings', { method: 'POST', body: JSON.stringify({ drink: '', flavor: '', reason: '' }) });
-    refresh();
+    try { await api('/api/admin/pairings', { method: 'POST', body: JSON.stringify({ drink: '', flavor: '', reason: '' }) }); refresh(); }
+    catch (err) { alert('Add failed: ' + err.message); }
   });
   $('#pairingList').addEventListener('click', async e => {
     const act = e.target.dataset.act;
     if (act === 'del-pairing') {
       const id = e.target.closest('.pairing-card').dataset.id;
       if (confirm('Delete this pairing?')) {
-        await api('/api/admin/pairings/' + id, { method: 'DELETE' }); refresh();
+        try { await api('/api/admin/pairings/' + id, { method: 'DELETE' }); refresh(); }
+        catch (err) { alert('Delete failed: ' + err.message); }
       }
     }
     if (act === 'save-pairings') {
       const rows = $$('#pairingList .pairing-card');
-      for (const row of rows) {
-        const id = row.dataset.id;
-        const fields = {};
-        row.querySelectorAll('[data-pf]').forEach(el => fields[el.dataset.pf] = el.value);
-        await api('/api/admin/pairings/' + id, { method: 'PUT', body: JSON.stringify(fields) });
-      }
-      flash('Pairings saved');
+      try {
+        for (const row of rows) {
+          const id = row.dataset.id;
+          const fields = {};
+          row.querySelectorAll('[data-pf]').forEach(el => fields[el.dataset.pf] = el.value);
+          await api('/api/admin/pairings/' + id, { method: 'PUT', body: JSON.stringify(fields) });
+        }
+        flash('Pairings saved');
+      } catch (err) { alert('Save failed: ' + err.message); }
     }
   });
 
@@ -579,28 +625,25 @@
     if (!DATA.feedback || !DATA.feedback.length) {
       wrap.innerHTML = '<div class="card muted" style="margin:0;">No feedback yet.</div>'; return;
     }
-    wrap.innerHTML = DATA.feedback.map(f => `
-      <div class="fb-card" data-id="${esc(f.id)}">
-        <div class="fb-head">
-          <div>
-            <div class="fb-stars">${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</div>
-            <div class="fb-name">${esc(f.name) || 'Anonymous'}</div>
-          </div>
-          <div style="text-align:right">
-            <div class="fb-meta">${new Date(f.timestamp).toLocaleString()}</div>
-            <button class="del-mini" data-act="del-fb">Delete</button>
-          </div>
-        </div>
-        ${f.experience ? '<div class="fb-text">' + esc(f.experience) + '</div>' : ''}
-        ${f.favoriteFlavor ? '<div class="fb-fav">Favorite tonight: <b>' + esc(f.favoriteFlavor) + '</b></div>' : ''}
-        <div class="fb-fav">${f.wouldRecommend ? '✓ Would recommend' : '✗ Would not recommend'}</div>
-      </div>`).join('');
+    wrap.innerHTML = DATA.feedback.map(f => '<div class="fb-card" data-id="' + esc(f.id) + '">'
+      + '<div class="fb-head"><div>'
+      +   '<div class="fb-stars">' + '★'.repeat(f.rating) + '☆'.repeat(5 - f.rating) + '</div>'
+      +   '<div class="fb-name">' + (esc(f.name) || 'Anonymous') + '</div>'
+      + '</div><div style="text-align:right">'
+      +   '<div class="fb-meta">' + new Date(f.timestamp).toLocaleString() + '</div>'
+      +   '<button class="del-mini" data-act="del-fb">Delete</button>'
+      + '</div></div>'
+      + (f.experience ? '<div class="fb-text">' + esc(f.experience) + '</div>' : '')
+      + (f.favoriteFlavor ? '<div class="fb-fav">Favorite tonight: <b>' + esc(f.favoriteFlavor) + '</b></div>' : '')
+      + '<div class="fb-fav">' + (f.wouldRecommend ? '✓ Would recommend' : '✗ Would not recommend') + '</div>'
+      + '</div>').join('');
   }
   $('#feedbackList').addEventListener('click', async e => {
     if (e.target.dataset.act === 'del-fb') {
       const id = e.target.closest('.fb-card').dataset.id;
       if (confirm('Delete this feedback?')) {
-        await api('/api/admin/feedback/' + id, { method: 'DELETE' }); refresh();
+        try { await api('/api/admin/feedback/' + id, { method: 'DELETE' }); refresh(); }
+        catch (err) { alert('Delete failed: ' + err.message); }
       }
     }
   });
@@ -631,8 +674,8 @@
   }
   $('#resetAnalytics').addEventListener('click', async () => {
     if (!confirm('Reset ALL analytics? This cannot be undone.')) return;
-    await api('/api/admin/analytics/reset', { method: 'POST' });
-    loadDashboard();
+    try { await api('/api/admin/analytics/reset', { method: 'POST' }); loadDashboard(); }
+    catch (err) { alert('Reset failed: ' + err.message); }
   });
 
   function flash(msg) {
