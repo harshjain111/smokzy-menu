@@ -80,7 +80,25 @@
           target.dispatchEvent(new Event('input', { bubbles: true }));
           target.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        flash('Uploaded ✓');
+        // mirror new URL into local DATA cache so renderSettings doesn't clobber it
+        if (DATA) {
+          if (targetId === 'set_logoUrl' && DATA.settings)        DATA.settings.logoUrl = j.url;
+          if (targetId === 'set_partnerLogoUrl' && DATA.settings) DATA.settings.partnerLogoUrl = j.url;
+          if (targetId === 'cv_bg' && DATA.cover)                 DATA.cover.backgroundImage = j.url;
+        }
+        // auto-save logo/partner uploads immediately so URL persists to Supabase
+        if (targetId === 'set_logoUrl' || targetId === 'set_partnerLogoUrl') {
+          await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify({
+            brandName: document.getElementById('set_brandName').value,
+            tagline: document.getElementById('set_tagline').value,
+            logoUrl: document.getElementById('set_logoUrl').value,
+            partnerName: document.getElementById('set_partnerName').value,
+            partnerLogoUrl: document.getElementById('set_partnerLogoUrl').value
+          })});
+          flash('Uploaded & saved ✓');
+        } else {
+          flash('Uploaded ✓ — click Save to persist');
+        }
         renderSettings();
       } catch (err) { alert('Upload failed: ' + err.message); }
       finally { btn.disabled = false; btn.textContent = orig; }
