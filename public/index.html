@@ -2,31 +2,106 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Smokzy" />
+  <meta name="theme-color" content="#5a1a1f" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
   <title>Smokzy — The Art of Shisha</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/menu.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Italiana&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/menu.css?v=5">
 </head>
 <body>
-  <!-- soft ambient background -->
   <div class="ambient"></div>
 
-  <!-- the book -->
-  <main id="book" class="book" aria-label="Smokzy menu book"></main>
+  <!-- ========== HOME SCREEN ========== -->
+  <section id="homeScreen" class="home-screen">
+    <div class="home-leather"></div>
+    <div class="home-frame"></div>
+    <div class="home-inner">
+      <div id="homeLogos" class="home-logos"><!-- filled by JS --></div>
+      <h1 class="home-title">SMOKZY</h1>
+      <div class="home-sub" id="homeSub">The Art of Shisha</div>
+      <div class="home-divider"><span></span><i>◆</i><span></span></div>
 
-  <!-- footer hint -->
-  <div class="hint" id="hint">Tap a page edge to turn  ·  Tap a flavor to reveal its story</div>
+      <div class="home-actions">
+        <button class="home-btn" data-go="menu">
+          <div class="home-btn-icon">📖</div>
+          <div class="home-btn-label">Menu</div>
+          <div class="home-btn-sub">browse our flavours</div>
+        </button>
+        <button class="home-btn" data-go="feedback">
+          <div class="home-btn-icon">✦</div>
+          <div class="home-btn-label">Feedback</div>
+          <div class="home-btn-sub">share your evening with us</div>
+        </button>
+      </div>
 
-  <!-- bottom nav -->
-  <nav class="bookNav">
-    <button id="prevBtn" class="navBtn" aria-label="Previous page">‹</button>
-    <span id="pageLabel" class="pageLabel">—</span>
-    <button id="nextBtn" class="navBtn" aria-label="Next page">›</button>
-  </nav>
+      <div class="home-foot">tap a card to begin</div>
+    </div>
+  </section>
 
-  <!-- flavor detail modal -->
+  <!-- ========== MENU (BOOK) ========== -->
+  <main id="menuView" class="view" hidden>
+    <button class="top-home-btn" data-go="home" title="Back to home">⌂ Home</button>
+    <main id="book" class="book" aria-label="Smokzy menu book"></main>
+    <div class="hint" id="hint">Tap a page edge to turn  ·  Tap a flavor to reveal its story</div>
+
+    <!-- floating zoom -->
+    <div class="zoom-controls">
+      <button id="zoomOutBtn" title="Zoom out">−</button>
+      <button id="zoomInBtn" title="Zoom in">+</button>
+    </div>
+
+    <nav class="bookNav">
+      <button id="prevBtn" class="navBtn" aria-label="Previous page">‹</button>
+      <span id="pageLabel" class="pageLabel">—</span>
+      <button id="nextBtn" class="navBtn" aria-label="Next page">›</button>
+    </nav>
+  </main>
+
+  <!-- ========== STANDALONE FEEDBACK ========== -->
+  <section id="feedbackView" class="view feedback-standalone" hidden>
+    <button class="top-home-btn" data-go="home" title="Back to home">⌂ Home</button>
+    <div class="fb-card-pane">
+      <h2>Before you leave</h2>
+      <p class="lede">Your feedback shapes the next chapter of Smokzy.</p>
+      <form id="standaloneFeedback" class="fb-form">
+        <div>
+          <label>How was your experience?</label>
+          <div class="stars" id="starsStandalone" role="radiogroup">
+            <span data-v="1" role="radio">★</span>
+            <span data-v="2" role="radio">★</span>
+            <span data-v="3" role="radio">★</span>
+            <span data-v="4" role="radio">★</span>
+            <span data-v="5" role="radio">★</span>
+          </div>
+          <input type="hidden" name="rating" id="ratingStandalone" value="5">
+        </div>
+        <div class="row2">
+          <div><label>Your name</label><input name="name" maxlength="80" placeholder="Optional"></div>
+          <div><label>Favorite flavor tonight</label><input name="favoriteFlavor" maxlength="80" placeholder="e.g. Mint Storm"></div>
+        </div>
+        <div><label>Tell us more</label><textarea name="experience" maxlength="500" placeholder="The one thing we should never change..."></textarea></div>
+        <label class="fb-recommend">
+          <input type="checkbox" name="wouldRecommend" checked>
+          I'd recommend Smokzy to a friend
+        </label>
+        <button type="submit" class="fb-submit">Submit feedback</button>
+      </form>
+      <div id="standaloneThanks" hidden class="fb-thanks">
+        <h3>Thank you ✦</h3>
+        <p>We've logged your note. It helps more than you know.</p>
+        <button class="ghost-back" data-go="home">Back to home</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- flavor detail modal (used inside menu) -->
   <div id="flavorModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-backdrop" data-close></div>
     <div class="modal-card" role="document">
@@ -35,6 +110,11 @@
     </div>
   </div>
 
-  <script src="/js/menu.js?v=4"></script>
+  <script src="/js/menu.js?v=5"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+    }
+  </script>
 </body>
 </html>

@@ -17,6 +17,274 @@
 
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
+[hidden] { display: none !important; }
+.view { width: 100%; height: 100vh; position: relative; }
+
+/* ============================================================
+   HOME SCREEN — first thing every guest sees on the tab
+   ============================================================ */
+.home-screen {
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 20%, #4a2018 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 90%, #2a0e0a 0%, transparent 55%),
+    linear-gradient(135deg, #3b1410 0%, #1d0806 100%);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 20;
+  overflow: hidden;
+}
+.home-leather {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,200,150,0.06) 0%, transparent 1.5%),
+    radial-gradient(circle at 80% 70%, rgba(255,200,150,0.05) 0%, transparent 1.8%),
+    radial-gradient(circle at 50% 50%, rgba(0,0,0,0.18) 0%, transparent 60%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.42 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 100% 100%, 100% 100%, 100% 100%, 240px 240px;
+  opacity: 0.85; mix-blend-mode: overlay;
+}
+.home-frame {
+  position: absolute; inset: 22px;
+  border: 1px solid rgba(201,168,106,0.45);
+  border-radius: 8px; pointer-events: none;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.55);
+}
+.home-frame::after {
+  content:''; position: absolute; inset: 8px;
+  border: 1px dashed rgba(201,168,106,0.22);
+  border-radius: 6px;
+}
+.home-inner {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  padding: 20px 40px;
+  max-width: 920px;
+}
+.home-logos {
+  display: flex; align-items: center; justify-content: center;
+  gap: 28px; margin-bottom: 24px; min-height: 96px;
+}
+.home-logos .logo-img {
+  width: 96px; height: 96px;
+  background-size: contain; background-position: center; background-repeat: no-repeat;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+}
+.home-logos .home-logo-divider {
+  width: 1px; height: 64px;
+  background: linear-gradient(180deg, transparent, rgba(201,168,106,0.5), transparent);
+}
+.home-logos .crest {
+  width: 96px; height: 96px;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--gold-bright);
+  font-family: var(--serif); font-size: 48px;
+  background: rgba(0,0,0,0.25);
+}
+.home-title {
+  font-family: var(--serif); font-weight: 600;
+  letter-spacing: 14px; font-size: clamp(40px, 5vw, 60px);
+  margin: 0;
+  background: linear-gradient(180deg, #f9e6b6 0%, #c9a86a 50%, #8c6a3c 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.home-sub {
+  font-family: var(--serif); font-style: italic;
+  font-size: 18px; color: rgba(255,230,195,0.85);
+  margin-top: 4px; letter-spacing: 2px;
+}
+.home-divider {
+  display: flex; align-items: center; gap: 10px; margin: 26px 0 30px;
+}
+.home-divider span { display: block; width: 100px; height: 1px; background: rgba(201,168,106,0.45); }
+.home-divider i { color: var(--gold); font-style: normal; font-size: 10px; }
+
+.home-actions {
+  display: flex; gap: 28px;
+  flex-wrap: wrap; justify-content: center;
+}
+.home-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 280px; height: 200px;
+  background: rgba(20, 12, 8, 0.55);
+  border: 1px solid rgba(201,168,106,0.45);
+  border-radius: 14px;
+  color: #f4dba0;
+  cursor: pointer;
+  transition: all 0.25s;
+  font-family: var(--serif);
+  padding: 24px;
+  backdrop-filter: blur(2px);
+}
+.home-btn:hover {
+  background: rgba(40, 20, 12, 0.7);
+  border-color: var(--gold);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(90,26,31,0.35);
+}
+.home-btn-icon {
+  font-size: 44px; margin-bottom: 12px;
+  filter: drop-shadow(0 0 12px rgba(201,168,106,0.4));
+}
+.home-btn-label {
+  font-size: 28px; font-weight: 600; letter-spacing: 4px;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #f9e6b6 0%, #c9a86a 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.home-btn-sub {
+  font-style: italic; font-size: 14px; color: rgba(255,230,195,0.6);
+  margin-top: 4px; letter-spacing: 0.5px;
+}
+.home-foot {
+  margin-top: 36px; font-size: 11px; letter-spacing: 4px;
+  color: rgba(201,168,106,0.5); text-transform: uppercase;
+}
+
+/* ============================================================
+   TOP HOME BUTTON (visible inside menu/feedback views)
+   ============================================================ */
+.top-home-btn {
+  position: fixed;
+  top: 16px; left: 16px;
+  z-index: 40;
+  background: rgba(0,0,0,0.55);
+  color: var(--gold-bright);
+  border: 1px solid rgba(201,168,106,0.5);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-family: var(--serif);
+  font-size: 14px;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: all 0.2s;
+}
+.top-home-btn:hover { background: rgba(90,26,31,0.7); border-color: var(--gold); }
+
+/* ============================================================
+   ZOOM CONTROLS (floating bottom-right, menu only)
+   ============================================================ */
+.zoom-controls {
+  position: fixed;
+  right: 18px; bottom: 80px;
+  z-index: 40;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.zoom-controls button {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  color: var(--gold-bright);
+  border: 1px solid rgba(201,168,106,0.5);
+  font-size: 22px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  display: grid; place-items: center;
+  transition: all 0.2s;
+}
+.zoom-controls button:hover { background: rgba(90,26,31,0.7); border-color: var(--gold); }
+
+/* ============================================================
+   STANDALONE FEEDBACK PANE
+   ============================================================ */
+.feedback-standalone {
+  background: radial-gradient(circle at 50% 20%, #1a1410 0%, #0a0807 60%, #000 100%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.fb-card-pane {
+  width: min(620px, 100%);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 36px 40px;
+  border-radius: 12px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+}
+.fb-card-pane h2 {
+  font-family: var(--serif); font-weight: 500;
+  font-size: 32px; margin: 0;
+}
+.fb-card-pane h2::after {
+  content:''; display: block; width: 60px; height: 1px;
+  background: var(--gold); margin-top: 12px;
+}
+.fb-card-pane .lede {
+  font-family: var(--serif); font-style: italic;
+  color: var(--ink-soft); margin: 12px 0 22px;
+}
+.fb-form { display: flex; flex-direction: column; gap: 14px; }
+.fb-form label {
+  font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--ink-soft);
+  display: block; margin-bottom: 4px;
+}
+.fb-form input, .fb-form textarea {
+  width: 100%; padding: 10px 12px;
+  border: 1px solid rgba(0,0,0,0.18);
+  background: rgba(255,255,255,0.5);
+  font-family: var(--sans); font-size: 14px;
+  color: var(--ink); border-radius: 4px; outline: none;
+}
+.fb-form textarea { min-height: 70px; resize: none; }
+.fb-form .stars { display: flex; gap: 6px; font-size: 28px; cursor: pointer; }
+.fb-form .stars span { color: rgba(0,0,0,0.2); transition: transform 0.1s; }
+.fb-form .stars span.on { color: var(--gold); transform: scale(1.05); }
+.fb-form .row2 { display: flex; gap: 12px; }
+.fb-form .row2 > div { flex: 1; }
+.fb-recommend {
+  display: flex !important; align-items: center; gap: 8px;
+  text-transform: none !important; letter-spacing: 0 !important;
+  font-size: 14px !important; color: var(--ink) !important;
+  margin-bottom: 0 !important;
+}
+.fb-recommend input { width: auto !important; }
+.fb-submit {
+  margin-top: 6px;
+  background: var(--ink); color: var(--gold-bright);
+  border: 0; padding: 14px;
+  border-radius: 6px;
+  font-size: 13px; letter-spacing: 3px; text-transform: uppercase;
+  cursor: pointer; transition: background 0.2s;
+}
+.fb-submit:hover { background: var(--burgundy); }
+.fb-thanks { text-align: center; padding: 30px 20px; }
+.fb-thanks h3 {
+  font-family: var(--serif); font-weight: 500; font-size: 32px;
+  color: var(--burgundy); margin: 0 0 8px;
+}
+.fb-thanks p { color: var(--ink-soft); font-style: italic; margin-bottom: 20px; }
+.ghost-back {
+  background: transparent; border: 1px solid var(--ink);
+  color: var(--ink); padding: 10px 22px; border-radius: 999px;
+  font-size: 13px; letter-spacing: 2px; cursor: pointer;
+  text-transform: uppercase;
+}
+.ghost-back:hover { background: var(--ink); color: var(--gold-bright); }
+
+/* ============================================================
+   LANDSCAPE TABLET optimization
+   ============================================================ */
+@media (orientation: landscape) and (min-width: 900px) {
+  .book {
+    width: min(96vw, 1200px);
+    height: min(78vh, 720px);
+    margin-top: 5vh;
+  }
+  .home-actions { gap: 36px; }
+  .home-btn { width: 320px; height: 220px; }
+}
+@media (orientation: landscape) and (max-height: 700px) {
+  .book { height: min(82vh, 600px); margin-top: 3vh; }
+  .home-inner { padding: 12px 20px; }
+  .home-logos { margin-bottom: 14px; min-height: 70px; }
+  .home-logos .logo-img, .home-logos .crest { width: 70px; height: 70px; }
+  .home-divider { margin: 16px 0 18px; }
+  .home-btn { height: 170px; width: 260px; }
+  .home-btn-icon { font-size: 36px; }
+}
 body {
   background: radial-gradient(circle at 50% 20%, #1a1410 0%, #0a0807 60%, #000 100%);
   font-family: var(--sans);

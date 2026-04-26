@@ -180,14 +180,12 @@
     form.reset();
     $('#nf_err').textContent = '';
     modal.querySelector('.tag-pills').innerHTML = '';
-    // refresh preset chips with all known tags (presets + already-used ones)
     const all = getAllKnownTags();
     const presetWrap = modal.querySelector('.tag-presets');
     presetWrap.innerHTML = all.map(t => {
       const isCustom = !TAG_PRESETS.includes(t);
       return '<button type="button" class="tag-preset' + (isCustom ? ' custom' : '') + '" data-act="add-preset" data-tag="' + esc(t) + '">' + esc(t) + '</button>';
     }).join('');
-    // also refresh datalist
     let dl = modal.querySelector('datalist');
     if (!dl) {
       dl = document.createElement('datalist');
@@ -196,7 +194,6 @@
       modal.querySelector('.tag-input').appendChild(dl);
     }
     dl.innerHTML = all.map(t => '<option value="' + esc(t) + '">').join('');
-
     modal.hidden = false;
     setTimeout(() => modal.querySelector('input[name="name"]').focus(), 50);
   }
@@ -312,7 +309,7 @@
       return;
     }
     wrap.innerHTML = lib.map(L => `
-      <div>
+      <div class="library-row" data-id="${esc(L.id)}">
         <div class="library-card" data-id="${esc(L.id)}">
           <div class="library-thumb" style="background-image:url('${esc(L.image)}')"></div>
           <div><strong>${esc(L.name) || '<em style="color:#888">untitled</em>'}</strong>
@@ -359,9 +356,12 @@
   }
 
   $('#libraryList').addEventListener('click', async e => {
-    const card = e.target.closest('.library-card');
-    if (!card) return;
-    const id = card.dataset.id;
+    // Find the wrapping .library-row by walking up — works whether the click
+    // was inside .library-card or its sibling .library-edit.
+    const row = e.target.closest('.library-row');
+    if (!row) return;
+    const id = row.dataset.id;
+    const card = row.querySelector('.library-card');
     const act = e.target.dataset.act;
     if (!act) return;
     if (act === 'add-preset' || act === 'del-tag') return;
@@ -377,22 +377,28 @@
       return;
     }
     if (act === 'save-lib') {
-      const wrap = card.parentElement;
+      const editPanel = row.querySelector('.library-edit');
       const fields = {};
-      wrap.querySelectorAll('[data-lf]').forEach(el => {
+      editPanel.querySelectorAll('[data-lf]').forEach(el => {
         let v;
         if (el.type === 'checkbox') v = el.checked;
         else if (el.type === 'number') v = +el.value;
         else v = el.value;
         fields[el.dataset.lf] = v;
       });
-      const ss = wrap.querySelector('.strength-select');
+      const ss = editPanel.querySelector('.strength-select');
       if (ss) fields.strengthLabel = ss.value;
-      const ti = wrap.querySelector('.tag-input');
+      const ti = editPanel.querySelector('.tag-input');
       if (ti) fields.tags = readTagsFrom(ti);
-      try { await api('/api/admin/library/' + id, { method: 'PUT', body: JSON.stringify(fields) });
-        flash('Library flavour saved'); refresh(); }
-      catch (err) { alert('Save failed: ' + err.message); }
+      const btn = e.target;
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        await api('/api/admin/library/' + id, { method: 'PUT', body: JSON.stringify(fields) });
+        flash('Library flavour saved ✓');
+        refresh();
+      } catch (err) { alert('Save failed: ' + err.message); }
+      finally { btn.disabled = false; btn.textContent = orig; }
     }
   });
 
