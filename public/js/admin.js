@@ -1,8 +1,11 @@
-// Smokzy Admin — login, CRUD, dashboard, image uploads, master flavour library
+// Smokzy Admin — login, CRUD, dashboard, library, tags, strength labels
 (() => {
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // Preset tag suggestions for the pill input
+  const TAG_PRESETS = ['minty','fruity','floral','ice','sweet','earthy','smoky','citrus','berry','cream','spicy','herbal','tropical','tobacco'];
 
   let DATA = null;
 
@@ -57,7 +60,29 @@
     loadDashboard();
   }
 
-  // delegated upload
+  // ---- helpers shared by library + custom flavour rows ----
+  function tagsInputHtml(id, tags) {
+    const ts = (tags || []).map(t => '<span class="tag-pill">' + esc(t) + '<button type="button" data-act="del-tag" data-tag="' + esc(t) + '">×</button></span>').join('');
+    return `
+      <div class="tag-input" data-tags-for="${esc(id)}">
+        <div class="tag-pills">${ts}</div>
+        <input type="text" placeholder="add tag + Enter (or pick below)" class="tag-text">
+        <div class="tag-presets">
+          ${TAG_PRESETS.map(t => `<button type="button" class="tag-preset" data-act="add-preset" data-tag="${esc(t)}">${esc(t)}</button>`).join('')}
+        </div>
+      </div>`;
+  }
+  function strengthSelectHtml(value) {
+    const v = (value || 'mild').toLowerCase();
+    return `
+      <select class="strength-select">
+        <option value="light"  ${v==='light'?'selected':''}>Light</option>
+        <option value="mild"   ${v==='mild'?'selected':''}>Mild</option>
+        <option value="strong" ${v==='strong'?'selected':''}>Strong</option>
+      </select>`;
+  }
+
+  // delegated upload (unchanged)
   document.addEventListener('click', e => {
     const btn = e.target.closest('[data-upload-target]');
     if (!btn) return;
@@ -104,7 +129,49 @@
     fi.click();
   });
 
-  // SETTINGS
+  // ---- TAG INPUT delegated handlers ----
+  document.addEventListener('keydown', e => {
+    if (!e.target.classList.contains('tag-text')) return;
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const tag = e.target.value.trim().toLowerCase();
+    if (!tag) return;
+    const wrap = e.target.closest('.tag-input');
+    addTagToInput(wrap, tag);
+    e.target.value = '';
+  });
+  document.addEventListener('click', e => {
+    const presetBtn = e.target.closest('[data-act="add-preset"]');
+    if (presetBtn) {
+      e.preventDefault();
+      const wrap = presetBtn.closest('.tag-input');
+      addTagToInput(wrap, presetBtn.dataset.tag);
+      return;
+    }
+    const delBtn = e.target.closest('[data-act="del-tag"]');
+    if (delBtn) {
+      e.preventDefault();
+      delBtn.parentElement.remove();
+      return;
+    }
+  });
+  function addTagToInput(wrap, tag) {
+    if (!wrap) return;
+    const existing = $$('.tag-pill', wrap).map(p => p.dataset.tag || p.textContent.replace(/×$/, '').trim());
+    if (existing.includes(tag)) return;
+    const pills = $('.tag-pills', wrap);
+    const span = document.createElement('span');
+    span.className = 'tag-pill';
+    span.dataset.tag = tag;
+    span.innerHTML = esc(tag) + '<button type="button" data-act="del-tag" data-tag="' + esc(tag) + '">×</button>';
+    pills.appendChild(span);
+  }
+  function readTagsFrom(wrap) {
+    if (!wrap) return [];
+    return $$('.tag-pill', wrap).map(p => p.dataset.tag || p.textContent.replace(/×$/, '').trim()).filter(Boolean);
+  }
+
+  // ---- SETTINGS ----
   function renderSettings() {
     const s = (DATA && DATA.settings) || {};
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
@@ -130,7 +197,7 @@
     } catch (err) { alert(err.message); }
   });
 
-  // COVER + FOUNDER
+  // ---- COVER + FOUNDER ----
   function renderCover() {
     const c = (DATA && DATA.cover) || {};
     $('#cv_title').value = c.title || ''; $('#cv_subtitle').value = c.subtitle || '';
@@ -176,9 +243,10 @@
           <div class="library-thumb" style="background-image:url('${esc(L.image)}')"></div>
           <div><strong>${esc(L.name) || '<em style="color:#888">untitled</em>'}</strong>
             <div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc((L.description || '').slice(0, 80))}${(L.description||'').length>80?'…':''}</div>
+            ${(L.tags||[]).length ? '<div style="margin-top:4px;">' + (L.tags||[]).map(t=>`<span class="tag-pill view">${esc(t)}</span>`).join('') + '</div>' : ''}
           </div>
           <div><span class="blend-chip ${L.blendType}">${L.blendType}</span></div>
-          <div style="font-size:13px;color:var(--muted);">Strength ${L.strength}/10</div>
+          <div style="font-size:13px;color:var(--muted);"><span class="strength-chip ${L.strengthLabel}">${L.strengthLabel}</span></div>
           <div style="font-size:13px;color:var(--muted);">₹${L.defaultPrice}</div>
           <div style="font-size:12px;color:var(--muted);">in ${L.usedInPots} pot${L.usedInPots===1?'':'s'}</div>
           <div class="lib-row-actions">
@@ -195,7 +263,7 @@
                 <option value="imported" ${L.blendType==='imported'?'selected':''}>Imported</option>
               </select>
             </label>
-            <label>Strength (1-10)<input data-lf="strength" type="number" min="1" max="10" value="${L.strength}"></label>
+            <label>Strength<span data-strength-wrap>${strengthSelectHtml(L.strengthLabel)}</span></label>
             <label>Default price (₹)<input data-lf="defaultPrice" type="number" value="${L.defaultPrice}"></label>
             <label class="full">Image URL
               <div class="img-with-upload">
@@ -204,6 +272,7 @@
               </div>
             </label>
             <label class="full">Description / tasting notes<textarea data-lf="description" rows="3">${esc(L.description || '')}</textarea></label>
+            <label class="full">Taste tags${tagsInputHtml('lib_tags_'+L.id, L.tags)}</label>
             <label style="display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0;">
               <input type="checkbox" data-lf="popular" ${L.popular?'checked':''} style="width:auto;">
               Mark as popular (★)
@@ -218,7 +287,7 @@
   $('#addLibrary').addEventListener('click', async () => {
     const name = prompt('Flavour name? (you can fill the rest after)');
     if (!name) return;
-    await api('/api/admin/library', { method: 'POST', body: JSON.stringify({ name, blendType: 'signature' }) });
+    await api('/api/admin/library', { method: 'POST', body: JSON.stringify({ name, blendType: 'signature', strengthLabel: 'mild' }) });
     refresh();
   });
 
@@ -228,6 +297,7 @@
     const id = card.dataset.id;
     const act = e.target.dataset.act;
     if (!act) return;
+    if (act === 'add-preset' || act === 'del-tag') return; // tag handlers run elsewhere
     e.preventDefault();
     if (act === 'edit-lib') { card.classList.toggle('editing'); return; }
     if (act === 'del-lib') {
@@ -251,6 +321,10 @@
         else v = el.value;
         fields[el.dataset.lf] = v;
       });
+      const ss = wrap.querySelector('.strength-select');
+      if (ss) fields.strengthLabel = ss.value;
+      const ti = wrap.querySelector('.tag-input');
+      if (ti) fields.tags = readTagsFrom(ti);
       await api('/api/admin/library/' + id, { method: 'PUT', body: JSON.stringify(fields) });
       flash('Library flavour saved');
       refresh();
@@ -295,7 +369,6 @@
           <button class="primary-btn" data-act="save-pot">Save pot</button>
         </div>
 
-        <!-- LIBRARY-LINKED FLAVOURS -->
         <div class="lib-picker">
           <div class="picker-head">
             <strong style="color:var(--ink); letter-spacing:0; text-transform:none; font-size:14px;">Flavours from Library</strong>
@@ -315,35 +388,46 @@
                 <input type="checkbox" ${linkedIds.has(L.id) ? 'checked disabled' : ''}>
                 <span class="name">${esc(L.name)}</span>
                 <span class="blend-chip ${L.blendType}">${L.blendType}</span>
-                <span style="color:var(--muted); font-size:12px;">str ${L.strength} · ₹${L.defaultPrice}</span>
+                <span style="color:var(--muted); font-size:12px;">${L.strengthLabel} · ₹${L.defaultPrice}</span>
               </label>`).join('')}
           </div>
           <button class="primary-btn" data-act="link-selected" style="margin-top:8px;">Add selected to pot</button>
         </div>
 
-        <!-- INLINE (custom one-off) FLAVOURS -->
         <div class="flavor-table">
           <div class="picker-head" style="display:flex; align-items:center; gap:8px;">
             <strong style="color:var(--ink); letter-spacing:0; text-transform:none; font-size:14px;">Custom flavours (this pot only)</strong>
           </div>
-          ${inlineFlavors.length ? `
-          <div class="flavor-row header">
-            <div>Image</div><div>Name</div><div>Strength</div><div>Price</div><div>Description</div><div class="center">Pop?</div><div></div>
-          </div>` : ''}
-          ${inlineFlavors.map(fl => `
-            <div class="flavor-row" data-flavor-id="${esc(fl.id)}">
-              <div class="flavor-thumb-cell">
-                <div class="flavor-thumb" style="background-image:url('${esc(fl.image || '')}')"></div>
-                <input data-ff="image" id="fl_img_${fl.id}" value="${esc(fl.image || '')}" placeholder="URL or upload">
-                <button type="button" class="ghost-btn mini" data-upload-target="fl_img_${fl.id}" title="Upload image">↑</button>
+          ${inlineFlavors.map((fl, idx) => `
+            <div class="flavor-row-v2" data-flavor-id="${esc(fl.id)}">
+              <div class="form-grid" style="margin-bottom:0;">
+                <label>Name<input data-ff="name" value="${esc(fl.name)}"></label>
+                <label>Blend type
+                  <select data-ff="blendType">
+                    <option value="signature" ${fl.blendType==='signature'?'selected':''}>Signature</option>
+                    <option value="imported" ${fl.blendType==='imported'?'selected':''}>Imported</option>
+                  </select>
+                </label>
+                <label>Strength<span data-strength-wrap>${strengthSelectHtml(fl.strengthLabel)}</span></label>
+                <label>Price ₹<input data-ff="price" type="number" value="${fl.price || pot.basePrice || 0}"></label>
+                <label class="full">Image URL
+                  <div class="img-with-upload">
+                    <input data-ff="image" id="fl_img_${fl.id}" value="${esc(fl.image || '')}">
+                    <button type="button" class="ghost-btn" data-upload-target="fl_img_${fl.id}">Upload…</button>
+                  </div>
+                </label>
+                <label class="full">Description<textarea data-ff="description" rows="2">${esc(fl.description || '')}</textarea></label>
+                <label class="full">Taste tags${tagsInputHtml('fl_tags_'+fl.id, fl.tags)}</label>
+                <label style="display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0;">
+                  <input type="checkbox" data-ff="popular" ${fl.popular?'checked':''} style="width:auto;">
+                  Popular (★)
+                </label>
               </div>
-              <input data-ff="name" value="${esc(fl.name)}">
-              <input data-ff="strength" type="number" min="1" max="10" value="${fl.strength || 5}">
-              <input data-ff="price" type="number" value="${fl.price || pot.basePrice || 0}">
-              <textarea data-ff="description" placeholder="Tasting notes...">${esc(fl.description || '')}</textarea>
-              <input data-ff="popular" type="checkbox" ${fl.popular ? 'checked' : ''} class="center">
-              <button class="del-mini" data-act="del-flavor">Delete</button>
-            </div>`).join('')}
+              <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
+                <button class="del-mini" data-act="del-flavor">Delete</button>
+              </div>
+            </div>
+          `).join('')}
           <div class="add-flavor-row" data-act="add-flavor">+ Add custom flavour</div>
           ${inlineFlavors.length ? '<div style="margin-top:10px;"><button class="primary-btn" data-act="save-flavors">Save custom flavours</button></div>' : ''}
         </div>
@@ -358,11 +442,11 @@
     refresh();
   });
 
-  // pot-level interactions (delegated)
   $('#potList').addEventListener('click', async e => {
     const card = e.target.closest('.pot-card'); if (!card) return;
     const potId = card.dataset.id;
     const act = e.target.dataset.act; if (!act) return;
+    if (act === 'add-preset' || act === 'del-tag') return;
     e.preventDefault();
     if (act === 'edit-pot') { card.classList.toggle('editing'); return; }
     if (act === 'del-pot') {
@@ -381,17 +465,17 @@
     }
     if (act === 'add-flavor') {
       const name = prompt('Custom flavour name?'); if (!name) return;
-      await api('/api/admin/pots/' + potId + '/flavors', { method: 'POST', body: JSON.stringify({ name }) });
+      await api('/api/admin/pots/' + potId + '/flavors', { method: 'POST', body: JSON.stringify({ name, strengthLabel: 'mild' }) });
       refresh(); return;
     }
     if (act === 'del-flavor') {
-      const row = e.target.closest('.flavor-row'); const flavorId = row.dataset.flavorId;
+      const row = e.target.closest('.flavor-row-v2'); const flavorId = row.dataset.flavorId;
       if (confirm('Delete this custom flavour?')) {
         await api('/api/admin/pots/' + potId + '/flavors/' + flavorId, { method: 'DELETE' }); refresh();
       } return;
     }
     if (act === 'save-flavors') {
-      const rows = card.querySelectorAll('.flavor-row[data-flavor-id]');
+      const rows = card.querySelectorAll('.flavor-row-v2[data-flavor-id]');
       for (const row of rows) {
         const flavorId = row.dataset.flavorId;
         const fields = {};
@@ -402,11 +486,14 @@
           else v = el.value;
           fields[el.dataset.ff] = v;
         });
+        const ss = row.querySelector('.strength-select');
+        if (ss) fields.strengthLabel = ss.value;
+        const ti = row.querySelector('.tag-input');
+        if (ti) fields.tags = readTagsFrom(ti);
         await api('/api/admin/pots/' + potId + '/flavors/' + flavorId, { method: 'PUT', body: JSON.stringify(fields) });
       }
       flash('Flavours saved'); refresh(); return;
     }
-    // unlink a library flavor
     if (act === 'unlink') {
       const libId = e.target.dataset.libId;
       if (confirm('Remove this library flavour from this pot? (the master flavour stays in your library)')) {
@@ -415,7 +502,6 @@
       }
       return;
     }
-    // link selected library flavours
     if (act === 'link-selected') {
       const opts = card.querySelectorAll('.lib-option input[type=checkbox]:not(:disabled):checked');
       const ids = Array.from(opts).map(cb => cb.closest('.lib-option').dataset.libId);
@@ -427,7 +513,6 @@
     }
   });
 
-  // search filter for the lib-options dropdown
   $('#potList').addEventListener('input', e => {
     if (e.target.dataset.act !== 'lib-search') return;
     const card = e.target.closest('.pot-card');
