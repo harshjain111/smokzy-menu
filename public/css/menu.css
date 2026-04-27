@@ -417,7 +417,13 @@ body {
   display: flex; flex-direction: column; gap: 12px;
   flex: 1; min-height: 0; overflow-y: auto;
   scrollbar-width: thin;
+  /* enable native touch + trackpad scrolling and smooth iOS momentum */
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
 }
+/* the entire flavour page should NOT flip when tapped — guests scroll here */
+.flavor-list.qc { cursor: default; }
 .qc-body::-webkit-scrollbar { width: 4px; }
 .qc-body::-webkit-scrollbar-thumb { background: rgba(28,24,20,0.2); border-radius: 4px; }
 .qc-body.qc-medium { gap: 8px; }

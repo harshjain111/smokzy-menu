@@ -307,6 +307,9 @@
       el.style.zIndex = (leaves.length - idx);
       el.appendChild(leaf.front); el.appendChild(leaf.back);
       el.addEventListener('click', e => {
+        // never trigger a page flip on taps INSIDE flavour list pages —
+        // guests need to scroll and tap rows freely without flipping
+        if (e.target.closest('.flavor-list')) return;
         if (e.target.closest('input, textarea, button, select, .qc-row, label, .stars span, .qc-chip, .qc-suggest, .qc-filters, .qc-toolbar, .qc-filter-panel')) return;
         nextPage();
       });
@@ -354,7 +357,6 @@
     if (hint && current > 0) hint.style.opacity = 0;
   }
 
-  // ============ FILTERS + SUGGEST ============
   function applyFilters(filtersEl) {
     const card = filtersEl.closest('.page');
     const activeStrength = filtersEl.dataset.activeStrength || '';
@@ -377,7 +379,6 @@
     });
     const clearBtn = $('.qc-clear', filtersEl);
     if (clearBtn) clearBtn.hidden = !(activeStrength || activeTags.length);
-    // active filter count chip on the toolbar Filters button
     const totalActive = (activeStrength ? 1 : 0) + activeTags.length;
     const countEl = card.querySelector('[data-active-count]');
     if (countEl) { countEl.textContent = totalActive; countEl.hidden = totalActive === 0; }
@@ -439,7 +440,6 @@
     }
   });
 
-  // ============ FLAVOR MODAL ============
   const modal = $('#flavorModal');
   function openFlavor(potId, flavorId) {
     const pot = ((DATA && DATA.pots) || []).find(p => p.id === potId);
@@ -532,14 +532,24 @@
       modal.setAttribute('aria-hidden', 'true');
     }
   });
-  let touchX = null;
-  $('#menuView').addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, {passive:true});
+
+  // Swipe to flip — but only when the gesture is clearly horizontal AND
+  // didn't start inside a scrollable / interactive area
+  let touchX = null, touchY = null;
+  $('#menuView').addEventListener('touchstart', e => {
+    touchX = e.touches[0].clientX;
+    touchY = e.touches[0].clientY;
+  }, {passive:true});
   $('#menuView').addEventListener('touchend', e => {
     if (touchX == null) return;
+    const startedIn = e.target && e.target.closest && e.target.closest('.qc-body, .qc-filter-panel, .qc-toolbar, .modal, .fb-card-pane, input, textarea, select, button');
     const dx = e.changedTouches[0].clientX - touchX;
-    if (dx < -50) nextPage();
-    if (dx > 50) prevPage();
-    touchX = null;
+    const dy = e.changedTouches[0].clientY - touchY;
+    touchX = touchY = null;
+    if (startedIn) return;
+    if (Math.abs(dy) > Math.abs(dx)) return; // vertical = scroll, ignore
+    if (dx < -60) nextPage();
+    if (dx > 60) prevPage();
   });
 
   $('#nextBtn').addEventListener('click', nextPage);
