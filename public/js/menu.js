@@ -34,15 +34,12 @@
   let zoom = 1;
   let menuTracked = false;
 
-  // ============ VIEW ROUTING ============
   function showView(name) {
     $('#homeScreen').hidden = (name !== 'home');
     $('#menuView').hidden    = (name !== 'menu');
     $('#feedbackView').hidden = (name !== 'feedback');
     if (name === 'menu') {
-      // build the book if not yet
       if (!leaves.length && DATA) buildAndMount();
-      // track view ONCE per visit to menu
       if (!menuTracked) {
         menuTracked = true;
         fetch('/api/track/view', {
@@ -52,15 +49,12 @@
       }
     }
     if (name === 'home') {
-      // reset book back to cover so next guest starts fresh
       resetBook();
-      menuTracked = false; // each fresh menu open re-tracks (per guest)
-      // reset standalone feedback form for next guest
+      menuTracked = false;
       const f = $('#standaloneFeedback');
       if (f) { f.hidden = false; f.reset(); }
       $('#standaloneThanks').hidden = true;
       $$('#starsStandalone span').forEach(s => s.classList.remove('on'));
-      // populate home logos from current data
       renderHomeLogos();
     }
   }
@@ -88,8 +82,7 @@
         el.style.zIndex = leaves.length - i;
       }
     }
-    current = 0;
-    animating = false;
+    current = 0; animating = false;
     updateNav();
   }
 
@@ -98,17 +91,9 @@
     if (goBtn) { e.preventDefault(); showView(goBtn.dataset.go); }
   });
 
-  // ============ ZOOM ============
-  function applyZoom() {
-    const book = $('#book');
-    if (book) book.style.transform = 'scale(' + zoom + ')';
-  }
-  $('#zoomInBtn').addEventListener('click', () => {
-    zoom = Math.min(1.6, zoom + 0.1); applyZoom();
-  });
-  $('#zoomOutBtn').addEventListener('click', () => {
-    zoom = Math.max(0.6, zoom - 0.1); applyZoom();
-  });
+  function applyZoom() { const book = $('#book'); if (book) book.style.transform = 'scale(' + zoom + ')'; }
+  $('#zoomInBtn').addEventListener('click', () => { zoom = Math.min(1.6, zoom + 0.1); applyZoom(); });
+  $('#zoomOutBtn').addEventListener('click', () => { zoom = Math.max(0.6, zoom - 0.1); applyZoom(); });
 
   // ============ RENDERERS ============
   function renderCover(c) {
@@ -123,13 +108,11 @@
     const logoRow = '<div class="cover-logos">' + smokzyLogo +
       (partnerLogo ? '<div class="cover-logo-divider"></div>' + partnerLogo : '') + '</div>';
     const curation = s.partnerName
-      ? '<div class="curation">curated exclusively for <em>' + esc(s.partnerName) + '</em></div>'
-      : '';
+      ? '<div class="curation">curated exclusively for <em>' + esc(s.partnerName) + '</em></div>' : '';
     return face('cover front',
       '<div class="cover-bg" style="background-image:' + (bg ? 'linear-gradient(135deg,rgba(0,0,0,.7),rgba(0,0,0,.35)),' + bg : 'none') + '"></div>' +
       '<div class="leather"></div><div class="leather-frame"></div>' +
-      '<div class="cover-inner">' +
-        logoRow +
+      '<div class="cover-inner">' + logoRow +
         '<h1>SHISHA MENU</h1>' + curation +
         '<div class="openLabel">' + esc((c && c.openLabel) || 'Open the menu') + ' →</div>' +
       '</div>');
@@ -174,8 +157,7 @@
       const filled = label === 'strong' ? 5 : label === 'mild' ? 3 : 1;
       let h = '<span class="qc-strength">';
       for (let i = 0; i < 5; i++) h += '<i class="' + (i < filled ? 'on' : '') + '"></i>';
-      h += '</span>';
-      return h;
+      h += '</span>'; return h;
     }
     function rowHtml(fl) {
       const tagsAttr = (fl.tags || []).join(',');
@@ -197,6 +179,7 @@
       return '<div class="qc-section-head" data-blend-head="' + blend + '">' +
         '<span class="qc-rule"></span><span class="qc-section-label">' + label + '</span><span class="qc-rule"></span></div>';
     }
+
     const sig = flavors.filter(f => (f.blendType || 'signature') === 'signature');
     const imp = flavors.filter(f => (f.blendType || 'signature') === 'imported');
     let body = '';
@@ -204,30 +187,40 @@
     if (imp.length) body += sectionHeader('I M P O R T E D   B L E N D S', 'imported') + twoColSection(imp, 'imported');
     if (!sig.length && !imp.length) body = '<div style="color:var(--ink-soft); font-style:italic; margin:auto;">No flavours yet.</div>';
 
-    const filterChips = '<div class="qc-filters" data-pot-id="' + esc(pot.id) + '">' +
-      '<div class="qc-filter-group">' +
+    const toolbar = '<div class="qc-toolbar">' +
+      '<button class="qc-tool-btn" data-act="toggle-filters" type="button">' +
+        '<span class="qc-tool-icon">⚲</span>' +
+        '<span class="qc-tool-label">Filters</span>' +
+        '<span class="qc-active-count" data-active-count hidden>0</span>' +
+      '</button>' +
+      (flavors.length ? '<button class="qc-tool-btn qc-suggest" data-pot-id="' + esc(pot.id) + '" type="button">' +
+        '<span class="qc-tool-icon">✦</span>' +
+        '<span class="qc-tool-label">Surprise me</span>' +
+      '</button>' : '') +
+    '</div>';
+
+    const filterPanel = '<div class="qc-filter-panel qc-filters" data-pot-id="' + esc(pot.id) + '" hidden>' +
+      '<div class="qc-filter-row">' +
+        '<span class="qc-filter-label">Strength</span>' +
         '<button class="qc-chip strength-chip" data-filter-strength="strong">Strong</button>' +
         '<button class="qc-chip strength-chip" data-filter-strength="mild">Mild</button>' +
         '<button class="qc-chip strength-chip" data-filter-strength="light">Light</button>' +
       '</div>' +
-      (allTags.length ? '<div class="qc-filter-divider"></div><div class="qc-filter-group">' +
+      (allTags.length ? '<div class="qc-filter-row">' +
+        '<span class="qc-filter-label">Tags</span>' +
         allTags.map(t => '<button class="qc-chip tag-chip" data-filter-tag="' + esc(t) + '">' + esc(t) + '</button>').join('') +
-        '</div>' : '') +
-      '<button class="qc-chip qc-clear" data-filter-clear hidden>clear</button></div>';
-
-    const suggest = flavors.length ? (
-      '<div class="qc-suggest-wrap"><button class="qc-suggest" data-pot-id="' + esc(pot.id) + '">' +
-        '<span class="qc-suggest-mark">✦</span>' +
-        '<span class="qc-suggest-label">Surprise me</span>' +
-        '<span class="qc-suggest-sub">a flavour for tonight</span></button></div>') : '';
+      '</div>' : '') +
+      '<button class="qc-chip qc-clear" data-filter-clear hidden>clear all</button>' +
+    '</div>';
 
     return face('flavor-list front qc',
-      '<div class="qc-title-block">' +
+      '<div class="qc-title-block compact">' +
         '<h4 class="qc-title">' + esc(pot.name) + '</h4>' +
         '<div class="qc-subtitle">' + total + ' flavour' + (total === 1 ? '' : 's') +
           (sig.length && imp.length ? ', two traditions' : '') + '</div>' +
-        '<div class="qc-ornament"><span class="qc-rule short"></span><span class="qc-diamond">◆</span><span class="qc-rule short"></span></div>' +
-      '</div>' + filterChips + '<div class="qc-body ' + dCls + '">' + body + '</div>' + suggest +
+      '</div>' +
+      toolbar + filterPanel +
+      '<div class="qc-body ' + dCls + '">' + body + '</div>' +
       '<span class="page-tag">' + pageNum + '</span>');
   }
 
@@ -247,16 +240,12 @@
       '<span class="page-tag">Pairings</span>');
   }
   function renderInBookFeedbackPrompt() {
-    // Inside the book we no longer ask for feedback (moved to standalone view).
-    // Replace with a "thank you for browsing" page instead.
     return face('feedback back',
       '<div style="margin:auto; text-align:center; padding:20px;">' +
         '<div style="font-family:var(--serif); font-size:64px; color:var(--gold); line-height:1;">✦</div>' +
-        '<p style="font-family:var(--serif); font-style:italic; font-size:22px; color:var(--ink); line-height:1.6; max-width:280px; margin:14px auto 0;">' +
-          'Ready to share how it tasted?</p>' +
+        '<p style="font-family:var(--serif); font-style:italic; font-size:22px; color:var(--ink); line-height:1.6; max-width:280px; margin:14px auto 0;">Ready to share how it tasted?</p>' +
         '<p style="font-family:var(--sans); font-size:13px; color:var(--ink-soft); margin-top:14px;">Tap ⌂ Home and choose Feedback.</p>' +
-      '</div>' +
-      '<span class="page-tag" style="left:24px;">Feedback</span>');
+      '</div><span class="page-tag" style="left:24px;">Feedback</span>');
   }
   function renderThankYou() {
     return face('feedback front',
@@ -316,26 +305,19 @@
       el.className = 'page right';
       el.dataset.leaf = idx;
       el.style.zIndex = (leaves.length - idx);
-      el.appendChild(leaf.front);
-      el.appendChild(leaf.back);
+      el.appendChild(leaf.front); el.appendChild(leaf.back);
       el.addEventListener('click', e => {
-        if (e.target.closest('input, textarea, button, select, .qc-row, label, .stars span, .qc-chip, .qc-suggest, .qc-filters')) return;
+        if (e.target.closest('input, textarea, button, select, .qc-row, label, .stars span, .qc-chip, .qc-suggest, .qc-filters, .qc-toolbar, .qc-filter-panel')) return;
         nextPage();
       });
       book.appendChild(el);
     });
   }
-  function buildAndMount() {
-    leaves = buildLeaves(DATA);
-    mountBook(leaves);
-    updateNav();
-  }
+  function buildAndMount() { leaves = buildLeaves(DATA); mountBook(leaves); updateNav(); }
 
-  // ============ NAV ============
   function nextPage() {
     if (animating || current >= leaves.length - 1) return;
-    const el = $('.page[data-leaf="' + current + '"]');
-    if (!el) return;
+    const el = $('.page[data-leaf="' + current + '"]'); if (!el) return;
     animating = true;
     el.style.zIndex = 300 + current;
     el.classList.add('flipped');
@@ -345,8 +327,7 @@
   function prevPage() {
     if (animating || current <= 0) return;
     current--;
-    const el = $('.page[data-leaf="' + current + '"]');
-    if (!el) return;
+    const el = $('.page[data-leaf="' + current + '"]'); if (!el) return;
     animating = true;
     el.style.zIndex = 300 + current;
     el.classList.remove('flipped');
@@ -396,8 +377,23 @@
     });
     const clearBtn = $('.qc-clear', filtersEl);
     if (clearBtn) clearBtn.hidden = !(activeStrength || activeTags.length);
+    // active filter count chip on the toolbar Filters button
+    const totalActive = (activeStrength ? 1 : 0) + activeTags.length;
+    const countEl = card.querySelector('[data-active-count]');
+    if (countEl) { countEl.textContent = totalActive; countEl.hidden = totalActive === 0; }
+    const toolBtn = card.querySelector('.qc-tool-btn[data-act="toggle-filters"]');
+    if (toolBtn) toolBtn.classList.toggle('on', totalActive > 0);
   }
+
   document.addEventListener('click', e => {
+    const tgl = e.target.closest('[data-act="toggle-filters"]');
+    if (tgl) {
+      e.preventDefault();
+      const card = tgl.closest('.page');
+      const panel = card.querySelector('.qc-filter-panel');
+      if (panel) panel.hidden = !panel.hidden;
+      return;
+    }
     const sBtn = e.target.closest('[data-filter-strength]');
     if (sBtn) {
       e.preventDefault();
@@ -498,7 +494,6 @@
   document.addEventListener('click', e => {
     const fi = e.target.closest('.qc-row');
     if (fi) { e.stopPropagation(); openFlavor(fi.dataset.potId, fi.dataset.flavorId); return; }
-    // standalone feedback stars
     const sStar = e.target.closest('#starsStandalone span');
     if (sStar) {
       const v = +sStar.dataset.v;
@@ -507,7 +502,6 @@
     }
   });
 
-  // ============ STANDALONE FEEDBACK SUBMIT ============
   $('#standaloneFeedback').addEventListener('submit', e => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -528,7 +522,6 @@
       .finally(() => { btn.disabled = false; btn.textContent = 'Submit feedback'; });
   });
 
-  // keyboard
   document.addEventListener('keydown', e => {
     if (!$('#menuView').hidden) {
       if (e.key === 'ArrowRight') nextPage();
@@ -539,7 +532,6 @@
       modal.setAttribute('aria-hidden', 'true');
     }
   });
-  // swipe (only inside menu)
   let touchX = null;
   $('#menuView').addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, {passive:true});
   $('#menuView').addEventListener('touchend', e => {
@@ -553,7 +545,6 @@
   $('#nextBtn').addEventListener('click', nextPage);
   $('#prevBtn').addEventListener('click', prevPage);
 
-  // ============ BOOT ============
   fetch('/api/menu').then(r => r.json()).then(data => {
     DATA = data;
     renderHomeLogos();
