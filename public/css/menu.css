@@ -220,7 +220,10 @@ body {
     radial-gradient(ellipse at 30% 20%, #4a2018 0%, transparent 55%),
     radial-gradient(ellipse at 80% 90%, #2a0e0a 0%, transparent 55%),
     linear-gradient(135deg, #3b1410 0%, #1d0806 100%);
-  color: #fff; position: relative; overflow: hidden;
+  color: #fff;
+  /* keep position:absolute from .page-face so leather fills the FULL page */
+  overflow: hidden;
+  padding: 0 !important;   /* override the page-face padding so leather goes edge-to-edge */
 }
 .cover .cover-bg {
   position: absolute; inset: 0;
@@ -246,7 +249,8 @@ body {
   border: 1px dashed rgba(201, 168, 106, 0.25); border-radius: 3px;
 }
 .cover .cover-inner {
-  position: relative; z-index: 2; height: 100%;
+  position: absolute; inset: 0;
+  z-index: 2;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   text-align: center; padding: 40px 30px;
@@ -524,6 +528,8 @@ body {
     radial-gradient(ellipse at 70% 30%, #4a2018 0%, transparent 55%),
     radial-gradient(ellipse at 20% 80%, #2a0e0a 0%, transparent 55%),
     linear-gradient(135deg, #1d0806 0%, #3b1410 100%);
+  padding: 0 !important;   /* edge-to-edge leather like the front cover */
+  overflow: hidden;
 }
 .back-cover .cover-inner h3 {
   font-family: var(--serif); font-weight: 600;
