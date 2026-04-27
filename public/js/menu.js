@@ -95,7 +95,6 @@
   $('#zoomInBtn').addEventListener('click', () => { zoom = Math.min(1.6, zoom + 0.1); applyZoom(); });
   $('#zoomOutBtn').addEventListener('click', () => { zoom = Math.max(0.6, zoom - 0.1); applyZoom(); });
 
-  // ============ RENDERERS ============
   function renderCover(c) {
     const bg = c && c.backgroundImage ? "url('" + esc(c.backgroundImage) + "')" : '';
     const s = (DATA && DATA.settings) || {};
@@ -175,16 +174,23 @@
         '<div class="qc-divider"></div>' +
         '<div class="qc-col">' + items.slice(half).map(rowHtml).join('') + '</div></div>';
     }
-    function sectionHeader(label, blend) {
+    function sectionHeader(words, blend) {
+      // words: [leftWord, rightWord] — explicit visible gap between them
       return '<div class="qc-section-head" data-blend-head="' + blend + '">' +
-        '<span class="qc-rule"></span><span class="qc-section-label">' + label + '</span><span class="qc-rule"></span></div>';
+        '<span class="qc-rule"></span>' +
+        '<span class="qc-section-label">' +
+          '<span class="qc-word">' + words[0] + '</span>' +
+          '<span class="qc-word-gap"></span>' +
+          '<span class="qc-word">' + words[1] + '</span>' +
+        '</span>' +
+        '<span class="qc-rule"></span></div>';
     }
 
     const sig = flavors.filter(f => (f.blendType || 'signature') === 'signature');
     const imp = flavors.filter(f => (f.blendType || 'signature') === 'imported');
     let body = '';
-    if (sig.length) body += sectionHeader('S I G N A T U R E   B L E N D S', 'signature') + twoColSection(sig, 'signature');
-    if (imp.length) body += sectionHeader('I M P O R T E D   B L E N D S', 'imported') + twoColSection(imp, 'imported');
+    if (sig.length) body += sectionHeader(['SIGNATURE','BLENDS'], 'signature') + twoColSection(sig, 'signature');
+    if (imp.length) body += sectionHeader(['IMPORTED','BLENDS'], 'imported')   + twoColSection(imp, 'imported');
     if (!sig.length && !imp.length) body = '<div style="color:var(--ink-soft); font-style:italic; margin:auto;">No flavours yet.</div>';
 
     const toolbar = '<div class="qc-toolbar">' +
@@ -307,8 +313,6 @@
       el.style.zIndex = (leaves.length - idx);
       el.appendChild(leaf.front); el.appendChild(leaf.back);
       el.addEventListener('click', e => {
-        // never trigger a page flip on taps INSIDE flavour list pages —
-        // guests need to scroll and tap rows freely without flipping
         if (e.target.closest('.flavor-list')) return;
         if (e.target.closest('input, textarea, button, select, .qc-row, label, .stars span, .qc-chip, .qc-suggest, .qc-filters, .qc-toolbar, .qc-filter-panel')) return;
         nextPage();
@@ -533,8 +537,6 @@
     }
   });
 
-  // Swipe to flip — but only when the gesture is clearly horizontal AND
-  // didn't start inside a scrollable / interactive area
   let touchX = null, touchY = null;
   $('#menuView').addEventListener('touchstart', e => {
     touchX = e.touches[0].clientX;
@@ -547,13 +549,32 @@
     const dy = e.changedTouches[0].clientY - touchY;
     touchX = touchY = null;
     if (startedIn) return;
-    if (Math.abs(dy) > Math.abs(dx)) return; // vertical = scroll, ignore
+    if (Math.abs(dy) > Math.abs(dx)) return;
     if (dx < -60) nextPage();
     if (dx > 60) prevPage();
   });
 
   $('#nextBtn').addEventListener('click', nextPage);
   $('#prevBtn').addEventListener('click', prevPage);
+
+  // Force true fullscreen on first user gesture when running as installed PWA
+  function isPwa() {
+    return window.matchMedia &&
+      (window.matchMedia('(display-mode: standalone)').matches ||
+       window.matchMedia('(display-mode: fullscreen)').matches ||
+       window.navigator.standalone === true);
+  }
+  if (isPwa()) {
+    const goFs = () => {
+      const el = document.documentElement;
+      const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+      if (req) { try { req.call(el); } catch (e) {} }
+      window.removeEventListener('pointerdown', goFs, true);
+      window.removeEventListener('keydown', goFs, true);
+    };
+    window.addEventListener('pointerdown', goFs, { once: true, capture: true });
+    window.addEventListener('keydown', goFs, { once: true, capture: true });
+  }
 
   fetch('/api/menu').then(r => r.json()).then(data => {
     DATA = data;

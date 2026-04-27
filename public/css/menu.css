@@ -436,6 +436,12 @@ body {
 .qc-section-label {
   font-family: var(--sans); font-size: 10px; letter-spacing: 3px;
   font-weight: 600; color: var(--gold); white-space: nowrap;
+  display: inline-flex; align-items: center;
+}
+.qc-section-label .qc-word { letter-spacing: 3px; }
+.qc-section-label .qc-word-gap {
+  display: inline-block;
+  width: 22px;        /* visible gap between SIGNATURE and BLENDS */
 }
 .qc-rule { flex: 1; height: 1px; background: rgba(28,24,20,0.18); }
 
