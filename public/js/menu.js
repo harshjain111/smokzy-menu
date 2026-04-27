@@ -485,10 +485,7 @@
   $('#nextBtn').addEventListener('click', nextPage);
   $('#prevBtn').addEventListener('click', prevPage);
 
-  // Global wheel handler — find the visible scrollable container under the
-  // cursor (or in the same .page-face) and scroll IT instead of the body.
-  // Needed because 3D-transformed parents (the book) sometimes break native
-  // wheel routing for nested overflow:auto containers.
+  // Wheel anywhere on the page scrolls the right inner container
   document.addEventListener('wheel', e => {
     const targetSel = '.qc-body, .pairing-list, .modal-card, .fb-card-pane';
     let el = e.target.closest(targetSel);
@@ -502,7 +499,10 @@
     e.preventDefault();
   }, { passive: false });
 
-  // Force true fullscreen on first user gesture in installed PWA
+  // Force true fullscreen on first user gesture, but DEFER it so the click
+  // that triggered the gesture (e.g. tapping Menu) finishes navigating first.
+  // Without the defer, the fullscreen layout shift interrupts the click chain
+  // and the user sees a "refresh" — they'd have to tap Menu twice.
   function isPwa() {
     return window.matchMedia &&
       (window.matchMedia('(display-mode: standalone)').matches ||
@@ -510,13 +510,18 @@
        window.navigator.standalone === true);
   }
   if (isPwa()) {
+    let fsArmed = true;
     const goFs = () => {
-      const el = document.documentElement;
-      const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-      if (req) { try { req.call(el); } catch (e) {} }
+      if (!fsArmed) return;
+      fsArmed = false;
+      setTimeout(() => {
+        const el = document.documentElement;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        if (req) { try { req.call(el); } catch (e) {} }
+      }, 250);
     };
-    window.addEventListener('pointerdown', goFs, { once: true, capture: true });
-    window.addEventListener('keydown', goFs, { once: true, capture: true });
+    window.addEventListener('click', goFs, { once: true });
+    window.addEventListener('keydown', goFs, { once: true });
   }
 
   fetch('/api/menu').then(r => r.json()).then(data => {

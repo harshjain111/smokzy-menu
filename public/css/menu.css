@@ -160,9 +160,11 @@ body {
 /* ============ THE BOOK ============ */
 .book {
   position: relative;
-  width: min(96vw, 1200px);
-  height: min(82vh, 720px);
-  margin: 4vh auto 0;
+  width: min(96vw, 1300px);
+  /* fill the whole viewport minus the top home button (~60px) and bottom nav (~80px) */
+  height: calc(100vh - 130px);
+  max-height: 880px;
+  margin: 60px auto 0;
   perspective: 2400px;
   z-index: 1;
   transform-origin: center center;
@@ -668,7 +670,6 @@ body {
 
 /* ============ LANDSCAPE TABLET TUNING ============ */
 @media (orientation: landscape) and (max-height: 760px) {
-  .book { height: min(82vh, 600px); margin-top: 3vh; }
   .home-inner { padding: 12px 20px; }
   .home-logos { margin-bottom: 14px; min-height: 70px; }
   .home-logos .logo-img, .home-logos .crest { width: 70px; height: 70px; }
