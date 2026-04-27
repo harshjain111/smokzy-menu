@@ -492,7 +492,16 @@ body {
 .pairings h2 { font-family: var(--serif); font-weight: 500; font-size: 34px; margin: 0 0 6px; }
 .pairings h2::after { content: ''; display: block; width: 60px; height: 1px; background: var(--gold); margin-top: 10px; }
 .pairings .lede { font-family: var(--serif); font-style: italic; color: var(--ink-soft); margin: 14px 0 22px; font-size: 15px; }
-.pairing-list { flex: 1; overflow-y: auto; padding-right: 6px; }
+.pairings.front, .pairings.back { cursor: default; }
+.pairing-list {
+  flex: 1; overflow-y: auto; padding-right: 6px;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.pairing-list::-webkit-scrollbar { width: 4px; }
+.pairing-list::-webkit-scrollbar-thumb { background: rgba(28,24,20,0.2); border-radius: 4px; }
 .pairing { padding: 14px 0; border-bottom: 1px dotted rgba(0,0,0,0.15); }
 .pairing .row { display: flex; align-items: baseline; gap: 10px; font-family: var(--serif); font-size: 19px; color: var(--ink); }
 .pairing .drink { font-weight: 600; }

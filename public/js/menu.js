@@ -6,10 +6,7 @@
 
   function visitorId() {
     let id = localStorage.getItem('smokzy_vid');
-    if (!id) {
-      id = 'v_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      localStorage.setItem('smokzy_vid', id);
-    }
+    if (!id) { id = 'v_' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('smokzy_vid', id); }
     return id;
   }
   function deriveStrengthLabel(s) {
@@ -27,12 +24,7 @@
     return d;
   };
 
-  let DATA = null;
-  let leaves = [];
-  let current = 0;
-  let animating = false;
-  let zoom = 1;
-  let menuTracked = false;
+  let DATA = null, leaves = [], current = 0, animating = false, zoom = 1, menuTracked = false;
 
   function showView(name) {
     $('#homeScreen').hidden = (name !== 'home');
@@ -42,10 +34,8 @@
       if (!leaves.length && DATA) buildAndMount();
       if (!menuTracked) {
         menuTracked = true;
-        fetch('/api/track/view', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ visitorId: visitorId() })
-        }).catch(()=>{});
+        fetch('/api/track/view', { method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ visitorId: visitorId() }) }).catch(()=>{});
       }
     }
     if (name === 'home') {
@@ -62,25 +52,16 @@
     const s = (DATA && DATA.settings) || {};
     const wrap = $('#homeLogos');
     if (!wrap) return;
-    const smokzyLogo = s.logoUrl
-      ? '<div class="logo-img" style="background-image:url(\'' + esc(s.logoUrl) + '\')"></div>'
-      : '<div class="crest">S</div>';
-    const partnerLogo = s.partnerLogoUrl
-      ? '<div class="logo-img" style="background-image:url(\'' + esc(s.partnerLogoUrl) + '\')"></div>'
-      : '';
+    const smokzyLogo = s.logoUrl ? '<div class="logo-img" style="background-image:url(\'' + esc(s.logoUrl) + '\')"></div>' : '<div class="crest">S</div>';
+    const partnerLogo = s.partnerLogoUrl ? '<div class="logo-img" style="background-image:url(\'' + esc(s.partnerLogoUrl) + '\')"></div>' : '';
     wrap.innerHTML = smokzyLogo + (partnerLogo ? '<div class="home-logo-divider"></div>' + partnerLogo : '');
-    if (s.partnerName) {
-      $('#homeSub').innerHTML = '<em>curated for ' + esc(s.partnerName) + '</em>';
-    }
+    if (s.partnerName) $('#homeSub').innerHTML = '<em>curated for ' + esc(s.partnerName) + '</em>';
   }
   function resetBook() {
     if (!leaves.length) return;
     for (let i = leaves.length - 1; i >= 0; i--) {
       const el = $('.page[data-leaf="' + i + '"]');
-      if (el) {
-        el.classList.remove('flipped');
-        el.style.zIndex = leaves.length - i;
-      }
+      if (el) { el.classList.remove('flipped'); el.style.zIndex = leaves.length - i; }
     }
     current = 0; animating = false;
     updateNav();
@@ -98,25 +79,17 @@
   function renderCover(c) {
     const bg = c && c.backgroundImage ? "url('" + esc(c.backgroundImage) + "')" : '';
     const s = (DATA && DATA.settings) || {};
-    const smokzyLogo = s.logoUrl
-      ? '<div class="logo-img" style="background-image:url(\'' + esc(s.logoUrl) + '\')"></div>'
-      : '<div class="crest">S</div>';
-    const partnerLogo = s.partnerLogoUrl
-      ? '<div class="logo-img" style="background-image:url(\'' + esc(s.partnerLogoUrl) + '\')"></div>'
-      : '';
-    const logoRow = '<div class="cover-logos">' + smokzyLogo +
-      (partnerLogo ? '<div class="cover-logo-divider"></div>' + partnerLogo : '') + '</div>';
-    const curation = s.partnerName
-      ? '<div class="curation">curated exclusively for <em>' + esc(s.partnerName) + '</em></div>' : '';
+    const smokzyLogo = s.logoUrl ? '<div class="logo-img" style="background-image:url(\'' + esc(s.logoUrl) + '\')"></div>' : '<div class="crest">S</div>';
+    const partnerLogo = s.partnerLogoUrl ? '<div class="logo-img" style="background-image:url(\'' + esc(s.partnerLogoUrl) + '\')"></div>' : '';
+    const logoRow = '<div class="cover-logos">' + smokzyLogo + (partnerLogo ? '<div class="cover-logo-divider"></div>' + partnerLogo : '') + '</div>';
+    const curation = s.partnerName ? '<div class="curation">curated exclusively for <em>' + esc(s.partnerName) + '</em></div>' : '';
     return face('cover front',
       '<div class="cover-bg" style="background-image:' + (bg ? 'linear-gradient(135deg,rgba(0,0,0,.7),rgba(0,0,0,.35)),' + bg : 'none') + '"></div>' +
       '<div class="leather"></div><div class="leather-frame"></div>' +
-      '<div class="cover-inner">' + logoRow +
-        '<h1>SHISHA MENU</h1>' + curation +
+      '<div class="cover-inner">' + logoRow + '<h1>SHISHA MENU</h1>' + curation +
         '<div class="openLabel">' + esc((c && c.openLabel) || 'Open the menu') + ' →</div>' +
       '</div>');
   }
-
   function renderFounderQuote() {
     return face('founder back',
       '<div style="margin:auto; text-align:center; padding:20px;">' +
@@ -175,14 +148,9 @@
         '<div class="qc-col">' + items.slice(half).map(rowHtml).join('') + '</div></div>';
     }
     function sectionHeader(words, blend) {
-      // words: [leftWord, rightWord] — explicit visible gap between them
       return '<div class="qc-section-head" data-blend-head="' + blend + '">' +
         '<span class="qc-rule"></span>' +
-        '<span class="qc-section-label">' +
-          '<span class="qc-word">' + words[0] + '</span>' +
-          '<span class="qc-word-gap"></span>' +
-          '<span class="qc-word">' + words[1] + '</span>' +
-        '</span>' +
+        '<span class="qc-section-label"><span class="qc-word">' + words[0] + '</span><span class="qc-word-gap"></span><span class="qc-word">' + words[1] + '</span></span>' +
         '<span class="qc-rule"></span></div>';
     }
 
@@ -200,11 +168,8 @@
         '<span class="qc-active-count" data-active-count hidden>0</span>' +
       '</button>' +
       (flavors.length ? '<button class="qc-tool-btn qc-suggest" data-pot-id="' + esc(pot.id) + '" type="button">' +
-        '<span class="qc-tool-icon">✦</span>' +
-        '<span class="qc-tool-label">Surprise me</span>' +
-      '</button>' : '') +
+        '<span class="qc-tool-icon">✦</span><span class="qc-tool-label">Surprise me</span></button>' : '') +
     '</div>';
-
     const filterPanel = '<div class="qc-filter-panel qc-filters" data-pot-id="' + esc(pot.id) + '" hidden>' +
       '<div class="qc-filter-row">' +
         '<span class="qc-filter-label">Strength</span>' +
@@ -212,20 +177,17 @@
         '<button class="qc-chip strength-chip" data-filter-strength="mild">Mild</button>' +
         '<button class="qc-chip strength-chip" data-filter-strength="light">Light</button>' +
       '</div>' +
-      (allTags.length ? '<div class="qc-filter-row">' +
-        '<span class="qc-filter-label">Tags</span>' +
+      (allTags.length ? '<div class="qc-filter-row"><span class="qc-filter-label">Tags</span>' +
         allTags.map(t => '<button class="qc-chip tag-chip" data-filter-tag="' + esc(t) + '">' + esc(t) + '</button>').join('') +
       '</div>' : '') +
-      '<button class="qc-chip qc-clear" data-filter-clear hidden>clear all</button>' +
-    '</div>';
+      '<button class="qc-chip qc-clear" data-filter-clear hidden>clear all</button></div>';
 
     return face('flavor-list front qc',
       '<div class="qc-title-block compact">' +
         '<h4 class="qc-title">' + esc(pot.name) + '</h4>' +
         '<div class="qc-subtitle">' + total + ' flavour' + (total === 1 ? '' : 's') +
           (sig.length && imp.length ? ', two traditions' : '') + '</div>' +
-      '</div>' +
-      toolbar + filterPanel +
+      '</div>' + toolbar + filterPanel +
       '<div class="qc-body ' + dCls + '">' + body + '</div>' +
       '<span class="page-tag">' + pageNum + '</span>');
   }
@@ -263,25 +225,17 @@
   }
   function renderBackCover() {
     const s = (DATA && DATA.settings) || {};
-    const smokzyLogo = s.logoUrl
-      ? '<div class="logo-img" style="background-image:url(\'' + esc(s.logoUrl) + '\'); width:64px; height:64px;"></div>'
-      : '<div class="crest" style="margin-bottom:14px;">S</div>';
-    const partnerLogo = s.partnerLogoUrl
-      ? '<div class="logo-img" style="background-image:url(\'' + esc(s.partnerLogoUrl) + '\'); width:64px; height:64px;"></div>'
-      : '';
-    const partner = s.partnerName ? (
-      '<div class="partner-strip" style="margin-top:30px;">' +
-        '<div class="partner-line" style="color:rgba(255,255,255,0.6);">In partnership with</div>' +
-        '<div class="partner-name">' + esc(s.partnerName) + '</div>' +
-      '</div>') : '';
+    const smokzyLogo = s.logoUrl ? '<div class="logo-img" style="background-image:url(\'' + esc(s.logoUrl) + '\'); width:64px; height:64px;"></div>' : '<div class="crest" style="margin-bottom:14px;">S</div>';
+    const partnerLogo = s.partnerLogoUrl ? '<div class="logo-img" style="background-image:url(\'' + esc(s.partnerLogoUrl) + '\'); width:64px; height:64px;"></div>' : '';
+    const partner = s.partnerName ? ('<div class="partner-strip" style="margin-top:30px;">' +
+      '<div class="partner-line" style="color:rgba(255,255,255,0.6);">In partnership with</div>' +
+      '<div class="partner-name">' + esc(s.partnerName) + '</div></div>') : '';
     return face('cover back back-cover',
       '<div class="leather"></div><div class="leather-frame"></div>' +
       '<div class="cover-inner">' +
-        '<div class="cover-logos">' + smokzyLogo +
-          (partnerLogo ? '<div class="cover-logo-divider"></div>' + partnerLogo : '') + '</div>' +
+        '<div class="cover-logos">' + smokzyLogo + (partnerLogo ? '<div class="cover-logo-divider"></div>' + partnerLogo : '') + '</div>' +
         '<h3 style="margin-top:18px;">SHISHA MENU</h3>' +
-        '<p>' + esc(s.tagline || 'The Art of Shisha') + '</p>' +
-        partner +
+        '<p>' + esc(s.tagline || 'The Art of Shisha') + '</p>' + partner +
       '</div>');
   }
 
@@ -290,30 +244,24 @@
     const pots = data.pots || [];
     let pageNum = 2;
     leaves.push({ front: renderCover(data.cover), back: renderFounderQuote() });
-    leaves.push({ front: renderFounderBody(data.founderNote),
-                  back: pots[0] ? renderPotImage(pots[0]) : renderPairingsIntro() });
+    leaves.push({ front: renderFounderBody(data.founderNote), back: pots[0] ? renderPotImage(pots[0]) : renderPairingsIntro() });
     pots.forEach((pot, i) => {
       const next = pots[i + 1];
-      leaves.push({
-        front: renderPotFlavors(pot, ++pageNum),
-        back: next ? renderPotImage(next) : renderPairingsIntro()
-      });
+      leaves.push({ front: renderPotFlavors(pot, ++pageNum), back: next ? renderPotImage(next) : renderPairingsIntro() });
     });
     leaves.push({ front: renderPairingsList(data.pairings), back: renderInBookFeedbackPrompt() });
     leaves.push({ front: renderThankYou(), back: renderBackCover() });
     return leaves;
   }
   function mountBook(leaves) {
-    const book = $('#book');
-    book.innerHTML = '';
+    const book = $('#book'); book.innerHTML = '';
     leaves.forEach((leaf, idx) => {
       const el = document.createElement('div');
-      el.className = 'page right';
-      el.dataset.leaf = idx;
+      el.className = 'page right'; el.dataset.leaf = idx;
       el.style.zIndex = (leaves.length - idx);
       el.appendChild(leaf.front); el.appendChild(leaf.back);
       el.addEventListener('click', e => {
-        if (e.target.closest('.flavor-list')) return;
+        if (e.target.closest('.flavor-list, .pairings, .feedback')) return;
         if (e.target.closest('input, textarea, button, select, .qc-row, label, .stars span, .qc-chip, .qc-suggest, .qc-filters, .qc-toolbar, .qc-filter-panel')) return;
         nextPage();
       });
@@ -392,13 +340,7 @@
 
   document.addEventListener('click', e => {
     const tgl = e.target.closest('[data-act="toggle-filters"]');
-    if (tgl) {
-      e.preventDefault();
-      const card = tgl.closest('.page');
-      const panel = card.querySelector('.qc-filter-panel');
-      if (panel) panel.hidden = !panel.hidden;
-      return;
-    }
+    if (tgl) { e.preventDefault(); const card = tgl.closest('.page'); const panel = card.querySelector('.qc-filter-panel'); if (panel) panel.hidden = !panel.hidden; return; }
     const sBtn = e.target.closest('[data-filter-strength]');
     if (sBtn) {
       e.preventDefault();
@@ -456,8 +398,7 @@
       : '<div class="modal-image generated">' + flavorIconSvg(fl) + '</div>';
     const tagsHtml = (fl.tags && fl.tags.length)
       ? '<div class="notes">' + fl.tags.map(t => '<span>' + esc(t) + '</span>').join('') + '</div>' : '';
-    $('#flavorModalBody').innerHTML =
-      img +
+    $('#flavorModalBody').innerHTML = img +
       '<div class="modal-text">' +
         '<div class="pot-of">From ' + esc(pot.name) + ' · ' + (fl.blendType || 'signature').toUpperCase() + '</div>' +
         '<h3>' + esc(fl.name) + '</h3>' +
@@ -475,11 +416,9 @@
     fetch('/api/track/flavor', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ flavorId }) }).catch(()=>{});
   }
   function flavorIconSvg(fl) {
-    const palette = {
-      fruit: ['#f49b6f', '#c54b3a'], mint: ['#9be0b6', '#1f6d4a'],
+    const palette = { fruit: ['#f49b6f', '#c54b3a'], mint: ['#9be0b6', '#1f6d4a'],
       classic: ['#d4a256', '#7a4a1a'], signature: ['#e88aa6', '#7c2843'],
-      tobacco: ['#a98860', '#3a2410'], default: ['#c9a86a', '#5a1a1f']
-    };
+      tobacco: ['#a98860', '#3a2410'], default: ['#c9a86a', '#5a1a1f'] };
     const c = palette[fl.category] || palette.default;
     const letter = (fl.name || '?').charAt(0).toUpperCase();
     return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">' +
@@ -489,10 +428,7 @@
       '<circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"/></svg>';
   }
   modal.addEventListener('click', e => {
-    if (e.target.matches('[data-close]')) {
-      modal.classList.remove('open');
-      modal.setAttribute('aria-hidden', 'true');
-    }
+    if (e.target.matches('[data-close]')) { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); }
   });
 
   document.addEventListener('click', e => {
@@ -519,10 +455,8 @@
     const btn = e.target.querySelector('.fb-submit');
     btn.disabled = true; btn.textContent = 'Submitting…';
     fetch('/api/feedback', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) })
-      .then(r => r.json()).then(() => {
-        e.target.hidden = true;
-        $('#standaloneThanks').hidden = false;
-      }).catch(err => alert('Submit failed: ' + err.message))
+      .then(r => r.json()).then(() => { e.target.hidden = true; $('#standaloneThanks').hidden = false; })
+      .catch(err => alert('Submit failed: ' + err.message))
       .finally(() => { btn.disabled = false; btn.textContent = 'Submit feedback'; });
   });
 
@@ -531,20 +465,14 @@
       if (e.key === 'ArrowRight') nextPage();
       if (e.key === 'ArrowLeft') prevPage();
     }
-    if (e.key === 'Escape') {
-      modal.classList.remove('open');
-      modal.setAttribute('aria-hidden', 'true');
-    }
+    if (e.key === 'Escape') { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); }
   });
 
   let touchX = null, touchY = null;
-  $('#menuView').addEventListener('touchstart', e => {
-    touchX = e.touches[0].clientX;
-    touchY = e.touches[0].clientY;
-  }, {passive:true});
+  $('#menuView').addEventListener('touchstart', e => { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; }, {passive:true});
   $('#menuView').addEventListener('touchend', e => {
     if (touchX == null) return;
-    const startedIn = e.target && e.target.closest && e.target.closest('.qc-body, .qc-filter-panel, .qc-toolbar, .modal, .fb-card-pane, input, textarea, select, button');
+    const startedIn = e.target && e.target.closest && e.target.closest('.qc-body, .pairing-list, .qc-filter-panel, .qc-toolbar, .modal, .fb-card-pane, input, textarea, select, button');
     const dx = e.changedTouches[0].clientX - touchX;
     const dy = e.changedTouches[0].clientY - touchY;
     touchX = touchY = null;
@@ -557,7 +485,24 @@
   $('#nextBtn').addEventListener('click', nextPage);
   $('#prevBtn').addEventListener('click', prevPage);
 
-  // Force true fullscreen on first user gesture when running as installed PWA
+  // Global wheel handler — find the visible scrollable container under the
+  // cursor (or in the same .page-face) and scroll IT instead of the body.
+  // Needed because 3D-transformed parents (the book) sometimes break native
+  // wheel routing for nested overflow:auto containers.
+  document.addEventListener('wheel', e => {
+    const targetSel = '.qc-body, .pairing-list, .modal-card, .fb-card-pane';
+    let el = e.target.closest(targetSel);
+    if (!el) {
+      const page = e.target.closest('.page-face');
+      if (page) el = page.querySelector('.qc-body, .pairing-list');
+    }
+    if (!el) return;
+    if (el.scrollHeight <= el.clientHeight) return;
+    el.scrollTop += e.deltaY;
+    e.preventDefault();
+  }, { passive: false });
+
+  // Force true fullscreen on first user gesture in installed PWA
   function isPwa() {
     return window.matchMedia &&
       (window.matchMedia('(display-mode: standalone)').matches ||
@@ -569,8 +514,6 @@
       const el = document.documentElement;
       const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
       if (req) { try { req.call(el); } catch (e) {} }
-      window.removeEventListener('pointerdown', goFs, true);
-      window.removeEventListener('keydown', goFs, true);
     };
     window.addEventListener('pointerdown', goFs, { once: true, capture: true });
     window.addEventListener('keydown', goFs, { once: true, capture: true });
