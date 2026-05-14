@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Italiana&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/menu.css?v=6">
+  <link rel="stylesheet" href="/css/menu.css?v=7">
 </head>
 <body>
   <div class="ambient"></div>
@@ -119,10 +119,24 @@
     </div>
   </div>
 
-  <script src="/js/menu.js?v=6"></script>
+  <script src="/js/menu.js?v=7"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          // force an update check on every load so new deploys take over fast
+          reg.update();
+          reg.addEventListener('updatefound', () => {
+            const sw = reg.installing;
+            if (!sw) return;
+            sw.addEventListener('statechange', () => {
+              if (sw.state === 'activated' && navigator.serviceWorker.controller) {
+                window.location.reload();
+              }
+            });
+          });
+        }).catch(()=>{});
+      });
     }
   </script>
 </body>

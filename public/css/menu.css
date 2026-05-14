@@ -350,7 +350,13 @@ body {
 }
 
 /* ============ QUIET CARTOGRAPHY (flavour page) ============ */
-.flavor-list.qc { padding: 22px 28px 18px; display: flex; flex-direction: column; }
+.flavor-list.qc {
+  padding: 22px 28px 18px;
+  display: flex; flex-direction: column;
+  box-sizing: border-box;
+  height: 100%;            /* fill the page exactly — never grow past it */
+  overflow: hidden;        /* the qc-body scrolls, not the page */
+}
 .qc-title-block { text-align: center; margin-bottom: 8px; }
 .qc-title-block.compact { margin-bottom: 6px; }
 .qc-title {
@@ -418,11 +424,29 @@ body {
 }
 .qc-clear:hover { background: var(--burgundy); color: #fff; }
 
+/* ----- strength legend (so guests know what the bars mean) ----- */
+.qc-legend {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin: 0 0 8px;
+}
+.qc-legend-key { display: inline-flex; gap: 3px; align-items: flex-end; }
+.qc-legend-key i {
+  width: 3px; height: 10px; display: block;
+  background: rgba(28,24,20,0.16);
+}
+.qc-legend-key i.on { background: var(--burgundy); }
+.qc-legend-text {
+  font-family: var(--sans); font-size: 9px; letter-spacing: 1.4px;
+  color: var(--ink-soft); text-transform: uppercase;
+}
+
 /* ----- list body, columns, rows ----- */
 .qc-body {
   display: flex; flex-direction: column; gap: 12px;
-  flex: 1; min-height: 0; overflow-y: auto;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
   scrollbar-width: thin;
+  padding-bottom: 26px;   /* keep last rows clear of the page number */
   /* enable native touch + trackpad scrolling and smooth iOS momentum */
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
@@ -1165,4 +1189,5 @@ body {
   color: var(--gold);
   flex-shrink: 0;
   padding-left: 2px;
+}
 }

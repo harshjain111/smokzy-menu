@@ -280,12 +280,19 @@
       '</div>' : '') +
       '<button class="qc-chip qc-clear" data-filter-clear hidden>clear all</button></div>';
 
+    const legend = '<div class="qc-legend" aria-hidden="true">' +
+      '<span class="qc-legend-key">' +
+        '<i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i>' +
+      '</span>' +
+      '<span class="qc-legend-text">bars show flavour strength · light → strong</span>' +
+    '</div>';
+
     return face('flavor-list front qc',
       '<div class="qc-title-block compact">' +
         '<h4 class="qc-title">' + esc(pot.name) + '</h4>' +
         '<div class="qc-subtitle">' + total + ' flavour' + (total === 1 ? '' : 's') +
           (sig.length && imp.length ? ', two traditions' : '') + '</div>' +
-      '</div>' + toolbar + filterPanel +
+      '</div>' + toolbar + filterPanel + legend +
       '<div class="qc-body ' + dCls + '">' + body + '</div>' +
       '<span class="page-tag">' + pageNum + '</span>');
   }
@@ -700,21 +707,6 @@
         const el = document.documentElement;
         const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
         if (req) { try { req.call(el); } catch (e) {} }
-      }, 250);
-    };
-    window.addEventListener('click', goFs, { once: true });
-    window.addEventListener('keydown', goFs, { once: true });
-  }
-
-  fetch('/api/menu').then(r => r.json()).then(data => {
-    DATA = data;
-    renderHomeLogos();
-    showView('home');
-  }).catch(err => {
-    document.body.innerHTML = '<div style="color:#fff;padding:40px;font-family:sans-serif;">Failed to load menu. ' + err.message + '</div>';
-  });
-})();
- { req.call(el); } catch (e) {} }
       }, 250);
     };
     window.addEventListener('click', goFs, { once: true });
