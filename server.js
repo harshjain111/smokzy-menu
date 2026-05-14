@@ -1,5 +1,4 @@
 // Smokzy interactive menu — Express backend (Supabase + Vercel)
-
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const multer = require('multer');
@@ -55,15 +54,17 @@ app.post('/api/admin/upload', requireAdmin, (req, res) => {
 app.get('/api/menu', async (req, res) => {
   try {
     const settings = await db.getSettings();
-    const [pots, pairings] = await Promise.all([db.getPots(), db.getPairings()]);
+    const [pots, pairings, library] = await Promise.all([db.getPots(), db.getPairings(), db.listLibrary()]);
     res.json({
       brand: settings.brandName || 'Smokzy',
       settings: {
         brandName: settings.brandName || 'SMOKZY', tagline: settings.tagline || '',
         logoUrl: settings.logoUrl || '', partnerName: settings.partnerName || '',
-        partnerLogoUrl: settings.partnerLogoUrl || ''
+        partnerLogoUrl: settings.partnerLogoUrl || '',
+        highlights: settings.highlights || { enabled: false, items: [] }
       },
-      cover: settings.cover || {}, founderNote: settings.founderNote || {}, pots, pairings
+      cover: settings.cover || {}, founderNote: settings.founderNote || {},
+      pots, pairings, library
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -101,55 +102,35 @@ app.get('/api/admin/me', (req, res) => {
   res.json({ admin: !!(tok && tok.role === 'admin') });
 });
 
-// admin: data
-app.get('/api/admin/data', requireAdmin, async (req, res) => {
-  try { res.json(await db.getEverything()); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.put('/api/admin/cover', requireAdmin, async (req, res) => {
-  try { res.json(await db.setCover(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.put('/api/admin/founder', requireAdmin, async (req, res) => {
-  try { res.json(await db.setFounderNote(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.put('/api/admin/settings', requireAdmin, async (req, res) => {
-  try { res.json(await db.updateSettings(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
+app.get('/api/admin/data', requireAdmin, async (req, res) => { try { res.json(await db.getEverything()); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/admin/cover', requireAdmin, async (req, res) => { try { res.json(await db.setCover(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/admin/founder', requireAdmin, async (req, res) => { try { res.json(await db.setFounderNote(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/admin/settings', requireAdmin, async (req, res) => { try { res.json(await db.updateSettings(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); } });
+
+// pots
+app.post('/api/admin/pots', requireAdmin, async (req, res) => { try { res.json(await db.createPot(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/admin/pots/:id', requireAdmin, async (req, res) => { try { res.json(await db.updatePot(req.params.id, req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.delete('/api/admin/pots/:id', requireAdmin, async (req, res) => { try { await db.deletePot(req.params.id); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/admin/pots-reorder', requireAdmin, async (req, res) => {
+  try {
+    const order = (req.body && req.body.order) || [];
+    for (let i = 0; i < order.length; i++) await db.updatePot(order[i], { position: i });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// admin: pots + inline flavors
-app.post('/api/admin/pots', requireAdmin, async (req, res) => {
-  try { res.json(await db.createPot(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.put('/api/admin/pots/:id', requireAdmin, async (req, res) => {
-  try { res.json(await db.updatePot(req.params.id, req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.delete('/api/admin/pots/:id', requireAdmin, async (req, res) => {
-  try { await db.deletePot(req.params.id); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.post('/api/admin/pots/:potId/flavors', requireAdmin, async (req, res) => {
-  try { res.json(await db.createFlavor(req.params.potId, req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.put('/api/admin/pots/:potId/flavors/:flavorId', requireAdmin, async (req, res) => {
-  try { res.json(await db.updateFlavor(req.params.potId, req.params.flavorId, req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.delete('/api/admin/pots/:potId/flavors/:flavorId', requireAdmin, async (req, res) => {
-  try { await db.deleteFlavor(req.params.potId, req.params.flavorId); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); }
-});
+// inline flavors
+app.post('/api/admin/pots/:potId/flavors', requireAdmin, async (req, res) => { try { res.json(await db.createFlavor(req.params.potId, req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/admin/pots/:potId/flavors/:flavorId', requireAdmin, async (req, res) => { try { res.json(await db.updateFlavor(req.params.potId, req.params.flavorId, req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.delete('/api/admin/pots/:potId/flavors/:flavorId', requireAdmin, async (req, res) => { try { await db.deleteFlavor(req.params.potId, req.params.flavorId); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
-// admin: master flavour library
-app.get('/api/admin/library', requireAdmin, async (req, res) => {
-  try { res.json(await db.listLibrary()); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.post('/api/admin/library', requireAdmin, async (req, res) => {
-  try { res.json(await db.createLibraryFlavor(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.put('/api/admin/library/:id', requireAdmin, async (req, res) => {
-  try { res.json(await db.updateLibraryFlavor(req.params.id, req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.delete('/api/admin/library/:id', requireAdmin, async (req, res) => {
-  try { await db.deleteLibraryFlavor(req.params.id); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); }
-});
+// master library
+app.get('/api/admin/library', requireAdmin, async (req, res) => { try { res.json(await db.listLibrary()); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/admin/library', requireAdmin, async (req, res) => { try { res.json(await db.createLibraryFlavor(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/admin/library/:id', requireAdmin, async (req, res) => { try { res.json(await db.updateLibraryFlavor(req.params.id, req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.delete('/api/admin/library/:id', requireAdmin, async (req, res) => { try { await db.deleteLibraryFlavor(req.params.id); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
-// admin: pot-library links
+// pot ↔ library links
 app.post('/api/admin/pots/:potId/library', requireAdmin, async (req, res) => {
   try {
     const ids = (req.body && req.body.libraryIds) || [];
@@ -158,10 +139,8 @@ app.post('/api/admin/pots/:potId/library', requireAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.delete('/api/admin/pots/:potId/library/:libraryId', requireAdmin, async (req, res) => {
-  try {
-    await db.unlinkLibraryFromPot(req.params.potId, req.params.libraryId);
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  try { await db.unlinkLibraryFromPot(req.params.potId, req.params.libraryId); res.json({ ok: true }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.put('/api/admin/pots/:potId/library/:libraryId', requireAdmin, async (req, res) => {
   try {
@@ -171,27 +150,15 @@ app.put('/api/admin/pots/:potId/library/:libraryId', requireAdmin, async (req, r
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// admin: pairings + feedback
-app.post('/api/admin/pairings', requireAdmin, async (req, res) => {
-  try { res.json(await db.createPairing(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.put('/api/admin/pairings/:id', requireAdmin, async (req, res) => {
-  try { res.json(await db.updatePairing(req.params.id, req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.delete('/api/admin/pairings/:id', requireAdmin, async (req, res) => {
-  try { await db.deletePairing(req.params.id); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.delete('/api/admin/feedback/:id', requireAdmin, async (req, res) => {
-  try { await db.deleteFeedback(req.params.id); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); }
-});
+// pairings + feedback
+app.post('/api/admin/pairings', requireAdmin, async (req, res) => { try { res.json(await db.createPairing(req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/admin/pairings/:id', requireAdmin, async (req, res) => { try { res.json(await db.updatePairing(req.params.id, req.body || {})); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.delete('/api/admin/pairings/:id', requireAdmin, async (req, res) => { try { await db.deletePairing(req.params.id); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.delete('/api/admin/feedback/:id', requireAdmin, async (req, res) => { try { await db.deleteFeedback(req.params.id); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
-// admin: analytics
-app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
-  try { res.json(await db.getAnalytics()); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-app.post('/api/admin/analytics/reset', requireAdmin, async (req, res) => {
-  try { await db.resetAnalytics(); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); }
-});
+// analytics
+app.get('/api/admin/analytics', requireAdmin, async (req, res) => { try { res.json(await db.getAnalytics()); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/admin/analytics/reset', requireAdmin, async (req, res) => { try { await db.resetAnalytics(); res.json({ ok: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
 if (require.main === module) {
   app.listen(PORT, () => {
@@ -201,5 +168,4 @@ if (require.main === module) {
     console.log('   Supabase:                 ' + (process.env.SUPABASE_URL || '⚠ NOT SET') + '\n');
   });
 }
-
 module.exports = app;

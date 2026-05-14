@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Italiana&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/menu.css?v=5">
+  <link rel="stylesheet" href="/css/menu.css?v=6">
 </head>
 <body>
   <div class="ambient"></div>
@@ -110,7 +110,16 @@
     </div>
   </div>
 
-  <script src="/js/menu.js?v=5"></script>
+  <!-- pot picker modal (for highlight CTAs) -->
+  <div id="potPickerModal" class="modal pot-picker-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card pp-card" role="document">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <div class="modal-body" id="potPickerBody"></div>
+    </div>
+  </div>
+
+  <script src="/js/menu.js?v=6"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));

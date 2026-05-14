@@ -105,6 +105,104 @@
       '<div class="signature">' + esc((f && f.founderName) || '') + '</div>' +
       '<span class="page-tag">ii</span>');
   }
+
+  // ---------- HIGHLIGHTS (magazine page) ----------
+  function resolveHighlight(item) {
+    if (!item || !item.libraryId) return null;
+    const lib = (DATA && DATA.library) || [];
+    const ref = lib.find(L => L.id === item.libraryId);
+    if (!ref) return null;
+    return {
+      libraryId: ref.id,
+      name: (item.title && item.title.trim()) || ref.name,
+      tagline: (item.tagline && item.tagline.trim()) || ref.description || '',
+      image: (item.image && item.image.trim()) || ref.image || '',
+      blendType: ref.blendType || 'signature',
+      strength: ref.strength,
+      strengthLabel: deriveStrengthLabel(ref),
+      tags: ref.tags || [],
+      description: ref.description || ''
+    };
+  }
+  function highlightCardHtml(h, side) {
+    if (!h) {
+      return '<div class="hl-card hl-card-empty hl-' + side + '"><div class="hl-empty">Curating next month\'s pick…</div></div>';
+    }
+    const tags = (h.tags || []).slice(0, 3).map(t => '<span class="hl-tag">' + esc(t) + '</span>').join('');
+    const img = h.image
+      ? '<div class="hl-image" style="background-image:url(\'' + esc(h.image) + '\')"></div>'
+      : '<div class="hl-image hl-image-fallback"><span>' + esc((h.name || '?').charAt(0).toUpperCase()) + '</span></div>';
+    const blendUpper = (h.blendType || 'signature').toUpperCase();
+    return '<div class="hl-card hl-' + side + '" data-library-id="' + esc(h.libraryId) + '">' +
+      img +
+      '<div class="hl-body">' +
+        '<div class="hl-kicker"><span class="hl-dot">◆</span> FEATURED THIS MONTH</div>' +
+        '<h3 class="hl-name">' + esc(h.name) + '</h3>' +
+        '<div class="hl-meta">' +
+          '<span class="hl-blend">' + blendUpper + '</span>' +
+          '<span class="hl-sep">·</span>' +
+          '<span class="hl-strength">' + esc(h.strengthLabel.toUpperCase()) + '</span>' +
+        '</div>' +
+        (h.tagline ? '<p class="hl-tagline">' + esc(h.tagline) + '</p>' : '') +
+        (tags ? '<div class="hl-tags">' + tags + '</div>' : '') +
+        '<button class="hl-cta" data-act="try-highlight" data-library-id="' + esc(h.libraryId) + '" type="button">' +
+          '<span>Try this</span><span class="hl-arr">→</span>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }
+  function renderHighlightsLeaf() {
+    const s = (DATA && DATA.settings) || {};
+    const hl = s.highlights || { enabled: false, items: [] };
+    const items = (hl.items || []).slice(0, 2);
+    const a = resolveHighlight(items[0]);
+    const b = resolveHighlight(items[1]);
+    return face('highlights front',
+      '<div class="hl-stage">' +
+        '<div class="hl-head">' +
+          '<span class="hl-rule"></span>' +
+          '<span class="hl-issue">' +
+            '<span class="hl-word">CURATED</span>' +
+            '<span class="hl-word-gap"></span>' +
+            '<span class="hl-word">SELECTIONS</span>' +
+          '</span>' +
+          '<span class="hl-rule"></span>' +
+        '</div>' +
+        '<div class="hl-subhead"><em>two flavours, hand-picked for this season</em></div>' +
+        '<div class="hl-spread">' +
+          highlightCardHtml(a, 'left') +
+          '<div class="hl-vdivider"><span></span><i>✦</i><span></span></div>' +
+          highlightCardHtml(b, 'right') +
+        '</div>' +
+        '<div class="hl-foot">tap <em>Try this</em> to choose a pot →</div>' +
+      '</div>' +
+      '<span class="page-tag">★</span>');
+  }
+  function renderHighlightsIntro() {
+    const s = (DATA && DATA.settings) || {};
+    const brand = esc(s.brandName || 'Smokzy');
+    return face('highlights-intro back',
+      '<div class="hli-stage">' +
+        '<div class="hli-top">' +
+          '<span class="hli-rule"></span>' +
+          '<span class="hli-issue">' +
+            '<span class="hli-word">VOL</span>' +
+            '<span class="hli-word-gap"></span>' +
+            '<span class="hli-word">' + (new Date()).getFullYear() + '</span>' +
+          '</span>' +
+          '<span class="hli-rule"></span>' +
+        '</div>' +
+        '<div class="hli-center">' +
+          '<div class="hli-mark">✦</div>' +
+          '<div class="hli-title">Featured<br><em>This Month</em></div>' +
+          '<div class="hli-line"></div>' +
+          '<div class="hli-sub">two flavours, hand-picked by ' + brand + '</div>' +
+        '</div>' +
+        '<div class="hli-foot">turn the page →</div>' +
+      '</div>' +
+      '<span class="page-tag" style="left:24px;">★</span>');
+  }
+
   function renderPotImage(pot) {
     return face('pot-image back',
       '<img src="' + esc(pot.image) + '" alt="' + esc(pot.name) + '" onerror="this.style.display=\'none\'">' +
@@ -239,19 +337,33 @@
       '</div>');
   }
 
+  function highlightsVisible(data) {
+    const hl = data && data.settings && data.settings.highlights;
+    if (!hl || !hl.enabled) return false;
+    const items = (hl.items || []).slice(0, 2);
+    const valid = items.some(it => it && it.libraryId);
+    return valid;
+  }
+
   function buildLeaves(data) {
-    const leaves = [];
+    const out = [];
     const pots = data.pots || [];
+    const showHl = highlightsVisible(data);
     let pageNum = 2;
-    leaves.push({ front: renderCover(data.cover), back: renderFounderQuote() });
-    leaves.push({ front: renderFounderBody(data.founderNote), back: pots[0] ? renderPotImage(pots[0]) : renderPairingsIntro() });
+    out.push({ front: renderCover(data.cover), back: renderFounderQuote() });
+    if (showHl) {
+      out.push({ front: renderFounderBody(data.founderNote), back: renderHighlightsIntro() });
+      out.push({ front: renderHighlightsLeaf(), back: pots[0] ? renderPotImage(pots[0]) : renderPairingsIntro() });
+    } else {
+      out.push({ front: renderFounderBody(data.founderNote), back: pots[0] ? renderPotImage(pots[0]) : renderPairingsIntro() });
+    }
     pots.forEach((pot, i) => {
       const next = pots[i + 1];
-      leaves.push({ front: renderPotFlavors(pot, ++pageNum), back: next ? renderPotImage(next) : renderPairingsIntro() });
+      out.push({ front: renderPotFlavors(pot, ++pageNum), back: next ? renderPotImage(next) : renderPairingsIntro() });
     });
-    leaves.push({ front: renderPairingsList(data.pairings), back: renderInBookFeedbackPrompt() });
-    leaves.push({ front: renderThankYou(), back: renderBackCover() });
-    return leaves;
+    out.push({ front: renderPairingsList(data.pairings), back: renderInBookFeedbackPrompt() });
+    out.push({ front: renderThankYou(), back: renderBackCover() });
+    return out;
   }
   function mountBook(leaves) {
     const book = $('#book'); book.innerHTML = '';
@@ -261,8 +373,8 @@
       el.style.zIndex = (leaves.length - idx);
       el.appendChild(leaf.front); el.appendChild(leaf.back);
       el.addEventListener('click', e => {
-        if (e.target.closest('.flavor-list, .pairings, .feedback')) return;
-        if (e.target.closest('input, textarea, button, select, .qc-row, label, .stars span, .qc-chip, .qc-suggest, .qc-filters, .qc-toolbar, .qc-filter-panel')) return;
+        if (e.target.closest('.flavor-list, .pairings, .feedback, .highlights')) return;
+        if (e.target.closest('input, textarea, button, select, .qc-row, label, .stars span, .qc-chip, .qc-suggest, .qc-filters, .qc-toolbar, .qc-filter-panel, .hl-card, .hl-cta')) return;
         nextPage();
       });
       book.appendChild(el);
@@ -301,6 +413,7 @@
     if (prevBtn) prevBtn.disabled = current <= 0;
     if (nextBtn) nextBtn.disabled = current >= leaves.length - 1;
     const spreadNames = ['Cover', "Founder's note"];
+    if (DATA && highlightsVisible(DATA)) spreadNames.push('Highlights');
     ((DATA && DATA.pots) || []).forEach(p => spreadNames.push(p.name));
     spreadNames.push('Pairings', 'Feedback', 'Thank you');
     const lbl = $('#pageLabel');
@@ -384,7 +497,78 @@
       pick.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => { pick.classList.remove('qc-glow'); openFlavor(pick.dataset.potId, pick.dataset.flavorId); }, 800);
     }
+    const hlCta = e.target.closest('[data-act="try-highlight"]');
+    if (hlCta) {
+      e.preventDefault();
+      e.stopPropagation();
+      openPotPicker(hlCta.dataset.libraryId);
+      return;
+    }
   });
+
+  // ---------- POT PICKER (for highlight CTAs) ----------
+  const potPicker = $('#potPickerModal');
+  function findPotsForLibrary(libraryId) {
+    const pots = (DATA && DATA.pots) || [];
+    const matches = [];
+    pots.forEach(pot => {
+      const fl = (pot.flavors || []).find(f => f.source === 'library' && f.libraryId === libraryId);
+      if (fl) {
+        const price = (fl.price != null && fl.price !== '') ? fl.price : pot.basePrice;
+        matches.push({ pot, flavor: fl, price });
+      }
+    });
+    return matches;
+  }
+  function openPotPicker(libraryId) {
+    const lib = ((DATA && DATA.library) || []).find(L => L.id === libraryId);
+    if (!lib || !potPicker) return;
+    const matches = findPotsForLibrary(libraryId);
+    const head = '<div class="pp-head">' +
+      '<div class="pp-kicker">CHOOSE YOUR POT</div>' +
+      '<h3 class="pp-name">' + esc(lib.name) + '</h3>' +
+      '<div class="pp-sub"><em>' + esc((lib.blendType || 'signature')) + ' blend' + (lib.description ? ' · ' + esc(lib.description) : '') + '</em></div>' +
+    '</div>';
+    let body;
+    if (!matches.length) {
+      body = '<div class="pp-empty">This flavour isn\'t carried in any of our pots right now. Please ask your host.</div>';
+    } else {
+      body = '<div class="pp-list">' + matches.map(m => {
+        const img = m.pot.image
+          ? '<div class="pp-thumb" style="background-image:url(\'' + esc(m.pot.image) + '\')"></div>'
+          : '<div class="pp-thumb pp-thumb-fallback"><span>' + esc((m.pot.name || '?').charAt(0)) + '</span></div>';
+        return '<button class="pp-item" type="button" data-pp-pot="' + esc(m.pot.id) + '" data-pp-flavor="' + esc(m.flavor.id) + '">' +
+          img +
+          '<div class="pp-item-text">' +
+            '<div class="pp-pot-name">' + esc(m.pot.name) + '</div>' +
+            '<div class="pp-pot-tag">' + esc(m.pot.tagline || 'Smokzy Selection') + '</div>' +
+          '</div>' +
+          '<div class="pp-price">₹' + (m.price == null ? '—' : m.price) + '</div>' +
+          '<div class="pp-go">›</div>' +
+        '</button>';
+      }).join('') + '</div>';
+    }
+    $('#potPickerBody').innerHTML = head + body;
+    potPicker.classList.add('open');
+    potPicker.setAttribute('aria-hidden', 'false');
+  }
+  function closePotPicker() {
+    if (!potPicker) return;
+    potPicker.classList.remove('open');
+    potPicker.setAttribute('aria-hidden', 'true');
+  }
+  if (potPicker) {
+    potPicker.addEventListener('click', e => {
+      if (e.target.matches('[data-close]')) { closePotPicker(); return; }
+      const item = e.target.closest('[data-pp-pot]');
+      if (item) {
+        const potId = item.dataset.ppPot;
+        const flavorId = item.dataset.ppFlavor;
+        closePotPicker();
+        setTimeout(() => openFlavor(potId, flavorId), 120);
+      }
+    });
+  }
 
   const modal = $('#flavorModal');
   function openFlavor(potId, flavorId) {
@@ -465,14 +649,17 @@
       if (e.key === 'ArrowRight') nextPage();
       if (e.key === 'ArrowLeft') prevPage();
     }
-    if (e.key === 'Escape') { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); }
+    if (e.key === 'Escape') {
+      modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true');
+      closePotPicker();
+    }
   });
 
   let touchX = null, touchY = null;
   $('#menuView').addEventListener('touchstart', e => { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; }, {passive:true});
   $('#menuView').addEventListener('touchend', e => {
     if (touchX == null) return;
-    const startedIn = e.target && e.target.closest && e.target.closest('.qc-body, .pairing-list, .qc-filter-panel, .qc-toolbar, .modal, .fb-card-pane, input, textarea, select, button');
+    const startedIn = e.target && e.target.closest && e.target.closest('.qc-body, .pairing-list, .qc-filter-panel, .qc-toolbar, .modal, .fb-card-pane, .hl-stage, input, textarea, select, button');
     const dx = e.changedTouches[0].clientX - touchX;
     const dy = e.changedTouches[0].clientY - touchY;
     touchX = touchY = null;
@@ -485,13 +672,12 @@
   $('#nextBtn').addEventListener('click', nextPage);
   $('#prevBtn').addEventListener('click', prevPage);
 
-  // Wheel anywhere on the page scrolls the right inner container
   document.addEventListener('wheel', e => {
-    const targetSel = '.qc-body, .pairing-list, .modal-card, .fb-card-pane';
+    const targetSel = '.qc-body, .pairing-list, .modal-card, .fb-card-pane, .pp-list, .hl-stage';
     let el = e.target.closest(targetSel);
     if (!el) {
       const page = e.target.closest('.page-face');
-      if (page) el = page.querySelector('.qc-body, .pairing-list');
+      if (page) el = page.querySelector('.qc-body, .pairing-list, .hl-stage');
     }
     if (!el) return;
     if (el.scrollHeight <= el.clientHeight) return;
@@ -499,10 +685,6 @@
     e.preventDefault();
   }, { passive: false });
 
-  // Force true fullscreen on first user gesture, but DEFER it so the click
-  // that triggered the gesture (e.g. tapping Menu) finishes navigating first.
-  // Without the defer, the fullscreen layout shift interrupts the click chain
-  // and the user sees a "refresh" — they'd have to tap Menu twice.
   function isPwa() {
     return window.matchMedia &&
       (window.matchMedia('(display-mode: standalone)').matches ||
@@ -518,6 +700,21 @@
         const el = document.documentElement;
         const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
         if (req) { try { req.call(el); } catch (e) {} }
+      }, 250);
+    };
+    window.addEventListener('click', goFs, { once: true });
+    window.addEventListener('keydown', goFs, { once: true });
+  }
+
+  fetch('/api/menu').then(r => r.json()).then(data => {
+    DATA = data;
+    renderHomeLogos();
+    showView('home');
+  }).catch(err => {
+    document.body.innerHTML = '<div style="color:#fff;padding:40px;font-family:sans-serif;">Failed to load menu. ' + err.message + '</div>';
+  });
+})();
+ { req.call(el); } catch (e) {} }
       }, 250);
     };
     window.addEventListener('click', goFs, { once: true });

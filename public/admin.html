@@ -30,6 +30,7 @@
         <button class="tab active" data-tab="dashboard">Dashboard</button>
         <button class="tab" data-tab="branding">Branding</button>
         <button class="tab" data-tab="cover">Cover & Founder</button>
+        <button class="tab" data-tab="highlights">Highlights</button>
         <button class="tab" data-tab="library">Flavour Library</button>
         <button class="tab" data-tab="pots">Pots & Flavors</button>
         <button class="tab" data-tab="pairings">Pairings</button>
@@ -158,6 +159,63 @@
           </div>
           <button class="primary-btn" id="saveFounder">Save founder note</button>
         </div>
+      </section>
+
+      <!-- HIGHLIGHTS -->
+      <section class="panel" data-panel="highlights" hidden>
+        <h2>Monthly Highlights</h2>
+        <p class="muted">A magazine-style page is inserted right after the Founder's note. Pick two flavours from the Library to feature each month. Customers see a premium spread; tapping a highlight lets them choose which pot to try it in.</p>
+
+        <div class="card">
+          <label class="fb-recommend" style="margin-top:6px;">
+            <input type="checkbox" id="hl_enabled">
+            Show the Highlights page in the customer menu
+          </label>
+        </div>
+
+        <div class="card" data-slot="0">
+          <h3>Highlight #1</h3>
+          <div class="form-grid">
+            <label>Flavour (from Library)
+              <select id="hl_libraryId_0"><option value="">— pick one —</option></select>
+            </label>
+            <label>Headline (optional override)
+              <input id="hl_title_0" placeholder="e.g. The November Romance">
+            </label>
+            <label class="full">Editorial tagline (optional)
+              <textarea id="hl_tagline_0" rows="2" placeholder="Two short lines of evocative copy. Defaults to the flavour description if left blank."></textarea>
+            </label>
+            <label class="full">Image URL (overrides the library image, optional)
+              <div class="img-with-upload">
+                <input id="hl_image_0">
+                <button type="button" class="ghost-btn" data-upload-target="hl_image_0">Upload…</button>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="card" data-slot="1">
+          <h3>Highlight #2</h3>
+          <div class="form-grid">
+            <label>Flavour (from Library)
+              <select id="hl_libraryId_1"><option value="">— pick one —</option></select>
+            </label>
+            <label>Headline (optional override)
+              <input id="hl_title_1" placeholder="e.g. Smokzy's Cinnamon Echo">
+            </label>
+            <label class="full">Editorial tagline (optional)
+              <textarea id="hl_tagline_1" rows="2"></textarea>
+            </label>
+            <label class="full">Image URL (overrides the library image, optional)
+              <div class="img-with-upload">
+                <input id="hl_image_1">
+                <button type="button" class="ghost-btn" data-upload-target="hl_image_1">Upload…</button>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <button class="primary-btn" id="saveHighlights">Save highlights</button>
       </section>
 
       <!-- FLAVOUR LIBRARY -->
