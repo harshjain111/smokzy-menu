@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Smokzy Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/admin.css?v=7">
+  <link rel="stylesheet" href="/css/admin.css?v=9">
 </head>
 <body>
   <!-- LOGIN -->
@@ -127,6 +127,14 @@
           </div>
         </div>
 
+        <div class="card">
+          <h3>Pricing</h3>
+          <p class="muted">Each <strong>pot</strong> has its own base price — that's the cost of any <em>signature</em> blend in it. For <em>imported</em> blends, this flat upcharge is added on top. So a pot priced at ₹1599 with an upcharge of ₹400 will show signature flavours at ₹1599 and imported flavours at ₹1999.</p>
+          <div class="form-grid">
+            <label>Imported blend upcharge (₹)<input id="set_importedUpcharge" type="number" min="0" step="50" value="0"></label>
+          </div>
+        </div>
+
         <button class="primary-btn" id="saveSettings">Save branding</button>
       </section>
 
@@ -234,9 +242,17 @@
       <section class="panel" data-panel="pots" hidden>
         <div class="row-between">
           <h2>Pots & Flavors</h2>
-          <button class="primary-btn" id="addPot">+ Add pot</button>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div class="view-switch" id="potsViewSwitch" role="tablist" aria-label="View">
+              <button type="button" class="vs-btn active" data-pots-view="list">List view</button>
+              <button type="button" class="vs-btn" data-pots-view="grid">Grid view</button>
+            </div>
+            <button class="primary-btn" id="addPot">+ Add pot</button>
+          </div>
         </div>
+        <p class="muted" id="potsViewHint">Card view: edit each pot, its image, base price, and inline flavours. Use Grid view to quickly check off which library flavours belong to which pot.</p>
         <div id="potList" class="pot-list"></div>
+        <div id="potGrid" class="pot-grid-wrap" hidden></div>
       </section>
 
       <!-- PAIRINGS -->
@@ -282,7 +298,6 @@
               <option value="strong">Strong</option>
             </select>
           </label>
-          <label>Default price (₹)<input name="defaultPrice" type="number" value="0"></label>
           <label class="full">Image URL
             <div class="img-with-upload">
               <input name="image" id="nf_image">
@@ -313,6 +328,6 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=7"></script>
+  <script src="/js/admin.js?v=9"></script>
 </body>
 </html>

@@ -482,6 +482,24 @@ body {
 .qc-col { min-width: 0; }
 .qc-divider { background: rgba(28,24,20,0.10); }
 
+/* When the list is short or medium, let the sections + rows spread to fill
+   the whole page so there's no dead blank space below. Tight pages (lots of
+   flavours) keep their natural top-aligned layout and scroll instead. */
+.qc-body.qc-roomy,
+.qc-body.qc-medium { justify-content: flex-start; }
+.qc-body.qc-roomy .qc-cols,
+.qc-body.qc-medium .qc-cols {
+  flex: 1 1 auto;
+  grid-auto-rows: 1fr;          /* the row stretches to the grown height */
+}
+.qc-body.qc-roomy .qc-col,
+.qc-body.qc-medium .qc-col {
+  display: flex; flex-direction: column;
+  justify-content: space-evenly;  /* spread rows evenly down the column */
+}
+.qc-body.qc-roomy .qc-section-head,
+.qc-body.qc-medium .qc-section-head { flex: 0 0 auto; }
+
 .qc-row {
   display: flex; align-items: center;
   padding: 7px 2px;
@@ -1189,5 +1207,4 @@ body {
   color: var(--gold);
   flex-shrink: 0;
   padding-left: 2px;
-}
 }

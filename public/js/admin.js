@@ -50,6 +50,7 @@
     DATA = await api('/api/admin/data');
     renderSettings(); renderCover(); renderFounder(); renderHighlights();
     renderLibrary(); renderPots(); renderPairings(); renderFeedback();
+    if (typeof potsView !== 'undefined' && potsView === 'grid') renderAssignmentGrid();
     loadDashboard();
   }
 
@@ -200,7 +201,6 @@
         name: (fd.get('name') || '').trim(),
         blendType: fd.get('blendType') || 'signature',
         strengthLabel: fd.get('strengthLabel') || 'mild',
-        defaultPrice: Number(fd.get('defaultPrice') || 0),
         image: fd.get('image') || '',
         description: fd.get('description') || '',
         popular: !!fd.get('popular'),
@@ -226,6 +226,8 @@
     set('set_brandName', s.brandName); set('set_tagline', s.tagline);
     set('set_logoUrl', s.logoUrl); set('set_partnerName', s.partnerName);
     set('set_partnerLogoUrl', s.partnerLogoUrl);
+    const up = document.getElementById('set_importedUpcharge');
+    if (up) up.value = (s.importedUpcharge != null ? s.importedUpcharge : 0);
     const lp = document.getElementById('settingsLogoPreview');
     if (lp) { lp.style.backgroundImage = s.logoUrl ? "url('" + s.logoUrl + "')" : ''; lp.textContent = s.logoUrl ? '' : 'No logo'; }
     const pp = document.getElementById('settingsPartnerPreview');
@@ -234,12 +236,15 @@
   document.addEventListener('click', async e => {
     if (e.target.id !== 'saveSettings') return;
     try {
+      const upEl = document.getElementById('set_importedUpcharge');
+      const upVal = upEl ? Number(upEl.value || 0) : 0;
       await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify({
         brandName: document.getElementById('set_brandName').value,
         tagline: document.getElementById('set_tagline').value,
         logoUrl: document.getElementById('set_logoUrl').value,
         partnerName: document.getElementById('set_partnerName').value,
-        partnerLogoUrl: document.getElementById('set_partnerLogoUrl').value
+        partnerLogoUrl: document.getElementById('set_partnerLogoUrl').value,
+        importedUpcharge: upVal
       })});
       flash('Branding saved'); refresh();
     } catch (err) { alert('Save failed: ' + err.message); }
@@ -336,7 +341,6 @@
           </div>
           <div><span class="blend-chip ${L.blendType}">${L.blendType}</span></div>
           <div><span class="strength-chip ${L.strengthLabel}">${L.strengthLabel}</span></div>
-          <div style="font-size:13px;color:var(--muted);">₹${L.defaultPrice}</div>
           <div style="font-size:12px;color:var(--muted);">in ${L.usedInPots} pot${L.usedInPots===1?'':'s'}</div>
           <div class="lib-row-actions">
             <button class="ghost-btn mini" data-act="edit-lib">Edit</button>
@@ -353,7 +357,6 @@
               </select>
             </label>
             <label>Strength<span>${strengthSelectHtml(L.strengthLabel)}</span></label>
-            <label>Default price (₹)<input data-lf="defaultPrice" type="number" value="${L.defaultPrice}"></label>
             <label class="full">Image URL
               <div class="img-with-upload">
                 <input data-lf="image" id="lib_img_${L.id}" value="${esc(L.image || '')}">
@@ -435,7 +438,7 @@
           <div class="pot-thumb" style="background-image:url('${esc(pot.image)}')"></div>
           <div class="pot-meta">
             <h3 class="pot-name">${esc(pot.name) || 'Untitled pot'}</h3>
-            <div class="pot-tagline">${esc(pot.tagline || '')} · From ₹${pot.basePrice == null ? 0 : pot.basePrice} · ${(pot.flavors || []).length} flavors</div>
+            <div class="pot-tagline">${esc(pot.tagline || '')} · Signature ₹${pot.basePrice == null ? 0 : pot.basePrice}${pot.importedPrice != null && pot.importedPrice !== pot.basePrice ? ' · Imported ₹' + pot.importedPrice : ''} · ${(pot.flavors || []).length} flavors</div>
           </div>
           <div class="pot-actions">
             <button class="ghost-btn mini" data-act="move-up"   title="Move up">↑</button>
@@ -475,7 +478,7 @@
               '<input type="checkbox" ' + (linkedIds.has(L.id) ? 'checked disabled' : '') + '>' +
               '<span class="name">' + esc(L.name) + '</span>' +
               '<span class="blend-chip ' + esc(L.blendType) + '">' + esc(L.blendType) + '</span>' +
-              '<span style="color:var(--muted); font-size:12px;">' + esc(L.strengthLabel) + ' · ₹' + L.defaultPrice + '</span>' +
+              '<span style="color:var(--muted); font-size:12px;">' + esc(L.strengthLabel) + '</span>' +
               '</label>').join('')}
           </div>
           <button class="primary-btn" data-act="link-selected" style="margin-top:8px;">Add selected to pot</button>
@@ -490,7 +493,6 @@
                 '<option value="imported" ' + (fl.blendType==='imported'?'selected':'') + '>Imported</option>' +
               '</select></label>' +
               '<label>Strength<span>' + strengthSelectHtml(fl.strengthLabel) + '</span></label>' +
-              '<label>Price ₹<input data-ff="price" type="number" value="' + (fl.price || pot.basePrice || 0) + '"></label>' +
               '<label class="full">Image URL<div class="img-with-upload">' +
                 '<input data-ff="image" id="fl_img_' + esc(fl.id) + '" value="' + esc(fl.image || '') + '">' +
                 '<button type="button" class="ghost-btn" data-upload-target="fl_img_' + esc(fl.id) + '">Upload…</button>' +
@@ -619,117 +621,303 @@
     }
   });
 
+  // ============ POTS VIEW SWITCH + ASSIGNMENT GRID ============
+  let potsView = 'list';
+  function showPotsView(name) {
+    potsView = name === 'grid' ? 'grid' : 'list';
+    const list = document.getElementById('potList');
+    const grid = document.getElementById('potGrid');
+    const hint = document.getElementById('potsViewHint');
+    if (list) list.hidden = potsView !== 'list';
+    if (grid) grid.hidden = potsView !== 'grid';
+    document.querySelectorAll('[data-pots-view]').forEach(b => {
+      b.classList.toggle('active', b.dataset.potsView === potsView);
+    });
+    if (hint) {
+      hint.textContent = potsView === 'grid'
+        ? 'Grid view: each column is a pot, each row is a library flavour. Click a cell to add or remove that flavour from that pot. Prices are derived from each pot’s base price (+ imported upcharge for imported blends).'
+        : 'Card view: edit each pot, its image, base price, and inline flavours. Use Grid view to quickly check off which library flavours belong to which pot.';
+    }
+    if (potsView === 'grid') renderAssignmentGrid();
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-pots-view]');
+    if (!b) return;
+    e.preventDefault();
+    showPotsView(b.dataset.potsView);
+  });
+
+  function buildLinkMap() {
+    // potId -> Set of libraryIds linked
+    const map = {};
+    (DATA.pots || []).forEach(p => {
+      const set = new Set();
+      (p.flavors || []).forEach(f => { if (f.source === 'library' && f.libraryId) set.add(f.libraryId); });
+      map[p.id] = set;
+    });
+    return map;
+  }
+
+  function renderAssignmentGrid() {
+    const wrap = document.getElementById('potGrid');
+    if (!wrap) return;
+    const pots = DATA.pots || [];
+    const lib = (DATA.library || []).slice().sort((a, b) => {
+      const ba = a.blendType || 'signature', bb = b.blendType || 'signature';
+      if (ba !== bb) return ba === 'signature' ? -1 : 1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+    if (!pots.length || !lib.length) {
+      wrap.innerHTML = '<div class="card muted" style="margin-top:14px;">' +
+        (!pots.length ? 'Add at least one pot first.' : 'Library is empty — add flavours to the Flavour Library first.') +
+      '</div>';
+      return;
+    }
+    const linkMap = buildLinkMap();
+    const totalCells = pots.length * lib.length;
+    const totalLinked = pots.reduce((s, p) => s + (linkMap[p.id] ? linkMap[p.id].size : 0), 0);
+
+    function potColHead(p) {
+      const imported = p.importedPrice != null && p.importedPrice !== p.basePrice;
+      return '<th class="ag-pot-col">' +
+        '<div class="ag-pot-name">' + esc(p.name || 'Untitled') + '</div>' +
+        '<div class="ag-pot-price">₹' + (p.basePrice || 0) +
+          (imported ? ' <span class="ag-pot-imp">· imp ₹' + p.importedPrice + '</span>' : '') +
+        '</div>' +
+      '</th>';
+    }
+    function cellHtml(p, L) {
+      const linked = linkMap[p.id] && linkMap[p.id].has(L.id);
+      return '<td class="ag-cell" data-pot-id="' + esc(p.id) + '" data-lib-id="' + esc(L.id) + '"' +
+        (linked ? ' data-linked="1"' : '') + '>' +
+        '<span class="ag-mark">' + (linked ? '✓' : '') + '</span>' +
+      '</td>';
+    }
+    function rowHtml(L) {
+      const price = (cellPot) => Number(cellPot.basePrice || 0) +
+        ((L.blendType === 'imported') ? Number((DATA.settings && DATA.settings.importedUpcharge) || 0) : 0);
+      return '<tr class="ag-row" data-blend="' + esc(L.blendType || 'signature') + '" data-name="' + esc((L.name||'').toLowerCase()) + '">' +
+        '<th class="ag-name-cell" scope="row">' +
+          '<div class="ag-name">' + esc(L.name) + (L.popular ? ' <span class="ag-pop">★</span>' : '') + '</div>' +
+          '<div class="ag-sub">' + esc(L.blendType || 'signature') + ' · ' + esc(L.strengthLabel || 'mild') + '</div>' +
+        '</th>' +
+        pots.map(p => cellHtml(p, L)).join('') +
+      '</tr>';
+    }
+
+    const sig = lib.filter(L => (L.blendType || 'signature') === 'signature');
+    const imp = lib.filter(L => (L.blendType || 'signature') === 'imported');
+
+    wrap.innerHTML = '' +
+      '<div class="ag-toolbar">' +
+        '<div class="ag-stat">' + lib.length + ' flavour' + (lib.length===1?'':'s') +
+        ' × ' + pots.length + ' pot' + (pots.length===1?'':'s') +
+        ' · ' + totalLinked + ' / ' + totalCells + ' linked</div>' +
+        '<input class="ag-search" id="agSearch" placeholder="Filter flavours…">' +
+      '</div>' +
+      '<div class="ag-scroll"><table class="ag-table"><thead><tr>' +
+        '<th class="ag-name-col">Flavour</th>' +
+        pots.map(potColHead).join('') +
+      '</tr></thead><tbody>' +
+        (sig.length ? '<tr class="ag-sec"><th colspan="' + (pots.length + 1) + '">SIGNATURE BLENDS</th></tr>' + sig.map(rowHtml).join('') : '') +
+        (imp.length ? '<tr class="ag-sec"><th colspan="' + (pots.length + 1) + '">IMPORTED BLENDS</th></tr>' + imp.map(rowHtml).join('') : '') +
+      '</tbody></table></div>';
+
+    const search = document.getElementById('agSearch');
+    if (search) {
+      search.addEventListener('input', () => {
+        const q = search.value.trim().toLowerCase();
+        wrap.querySelectorAll('.ag-row').forEach(r => {
+          r.style.display = (!q || r.dataset.name.includes(q)) ? '' : 'none';
+        });
+      });
+    }
+  }
+
+  // Click on a grid cell → toggle the link, optimistic UI, then API.
+  document.addEventListener('click', async e => {
+    const cell = e.target.closest('#potGrid .ag-cell');
+    if (!cell) return;
+    e.preventDefault();
+    if (cell.dataset.busy) return;
+    const potId = cell.dataset.potId;
+    const libId = cell.dataset.libId;
+    const wasLinked = cell.dataset.linked === '1';
+    cell.dataset.busy = '1';
+    if (wasLinked) {
+      delete cell.dataset.linked;
+      cell.querySelector('.ag-mark').textContent = '';
+    } else {
+      cell.dataset.linked = '1';
+      cell.querySelector('.ag-mark').textContent = '✓';
+    }
+    try {
+      if (wasLinked) {
+        await api('/api/admin/pots/' + potId + '/library/' + libId, { method: 'DELETE' });
+      } else {
+        await api('/api/admin/pots/' + potId + '/library', { method: 'POST', body: JSON.stringify({ libraryIds: [libId] }) });
+      }
+      const pot = (DATA.pots || []).find(p => p.id === potId);
+      const L = (DATA.library || []).find(x => x.id === libId);
+      if (pot && L) {
+        pot.flavors = pot.flavors || [];
+        if (wasLinked) {
+          pot.flavors = pot.flavors.filter(f => !(f.source === 'library' && f.libraryId === libId));
+        } else if (!pot.flavors.some(f => f.source === 'library' && f.libraryId === libId)) {
+          const up = (DATA.settings && DATA.settings.importedUpcharge) || 0;
+          const isImp = (L.blendType || 'signature') === 'imported';
+          pot.flavors.push({
+            ...L, id: 'lib_' + L.id, potId: potId, source: 'library', libraryId: L.id,
+            price: Number(pot.basePrice || 0) + (isImp ? up : 0)
+          });
+        }
+      }
+      const linkMap = buildLinkMap();
+      const totalLinked = (DATA.pots || []).reduce((s, p) => s + (linkMap[p.id] ? linkMap[p.id].size : 0), 0);
+      const totalCells = (DATA.pots || []).length * (DATA.library || []).length;
+      const stat = document.querySelector('#potGrid .ag-stat');
+      if (stat) stat.textContent = (DATA.library||[]).length + ' flavours × ' + (DATA.pots||[]).length + ' pots · ' + totalLinked + ' / ' + totalCells + ' linked';
+    } catch (err) {
+      if (wasLinked) { cell.dataset.linked = '1'; cell.querySelector('.ag-mark').textContent = '✓'; }
+      else { delete cell.dataset.linked; cell.querySelector('.ag-mark').textContent = ''; }
+      alert('Update failed: ' + err.message);
+    } finally {
+      delete cell.dataset.busy;
+    }
+  });
+
   // ============ PAIRINGS ============
   function renderPairings() {
-    const wrap = $('#pairingList'); wrap.innerHTML = '';
-    (DATA.pairings || []).forEach(p => {
-      const div = document.createElement('div');
-      div.className = 'pairing-card'; div.dataset.id = p.id;
-      div.innerHTML = '<input data-pf="drink" placeholder="Drink" value="' + esc(p.drink) + '">' +
-        '<input data-pf="flavor" placeholder="Recommended flavor" value="' + esc(p.flavor) + '">' +
-        '<textarea data-pf="reason" placeholder="Why it works...">' + esc(p.reason) + '</textarea>' +
-        '<button class="del-mini" data-act="del-pairing">×</button>';
-      wrap.appendChild(div);
-    });
-    const saveAll = document.createElement('button');
-    saveAll.className = 'primary-btn'; saveAll.style.marginTop = '12px';
-    saveAll.textContent = 'Save all pairings'; saveAll.dataset.act = 'save-pairings';
-    wrap.appendChild(saveAll);
-  }
-  $('#addPairing').addEventListener('click', async () => {
-    try { await api('/api/admin/pairings', { method: 'POST', body: JSON.stringify({ drink: '', flavor: '', reason: '' }) }); refresh(); }
-    catch (err) { alert('Add failed: ' + err.message); }
-  });
-  $('#pairingList').addEventListener('click', async e => {
-    const act = e.target.dataset.act;
-    if (act === 'del-pairing') {
-      const id = e.target.closest('.pairing-card').dataset.id;
-      if (confirm('Delete this pairing?')) {
-        try { await api('/api/admin/pairings/' + id, { method: 'DELETE' }); refresh(); }
-        catch (err) { alert('Delete failed: ' + err.message); }
-      }
+    const wrap = $('#pairingList');
+    if (!wrap) return;
+    const items = (DATA && DATA.pairings) || [];
+    if (!items.length) {
+      wrap.innerHTML = '<div class="card muted">No pairings yet. Click "+ Add pairing" to create one.</div>';
+      return;
     }
-    if (act === 'save-pairings') {
-      const rows = $$('#pairingList .pairing-card');
-      try {
-        for (const row of rows) {
-          const id = row.dataset.id;
-          const fields = {};
-          row.querySelectorAll('[data-pf]').forEach(el => fields[el.dataset.pf] = el.value);
-          await api('/api/admin/pairings/' + id, { method: 'PUT', body: JSON.stringify(fields) });
-        }
-        flash('Pairings saved');
-      } catch (err) { alert('Save failed: ' + err.message); }
+    wrap.innerHTML = items.map(p => '<div class="card pairing-row" data-id="' + esc(p.id) + '">' +
+      '<div class="form-grid">' +
+        '<label>Drink<input data-pf="drink" value="' + esc(p.drink || '') + '"></label>' +
+        '<label>Flavour<input data-pf="flavor" value="' + esc(p.flavor || '') + '"></label>' +
+        '<label class="full">Why it works<textarea data-pf="reason" rows="2">' + esc(p.reason || '') + '</textarea></label>' +
+      '</div>' +
+      '<div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">' +
+        '<button class="ghost-btn" data-act="save-pairing">Save</button>' +
+        '<button class="del-mini" data-act="del-pairing">Delete</button>' +
+      '</div></div>').join('');
+  }
+  const addPairingBtn = $('#addPairing');
+  if (addPairingBtn) addPairingBtn.addEventListener('click', async () => {
+    try { await api('/api/admin/pairings', { method: 'POST', body: JSON.stringify({ drink: 'New drink', flavor: '', reason: '' }) }); refresh(); }
+    catch (err) { alert('Add pairing failed: ' + err.message); }
+  });
+  const pairingListEl = $('#pairingList');
+  if (pairingListEl) pairingListEl.addEventListener('click', async e => {
+    const row = e.target.closest('.pairing-row'); if (!row) return;
+    const id = row.dataset.id;
+    const act = e.target.dataset.act; if (!act) return;
+    e.preventDefault();
+    if (act === 'del-pairing') {
+      if (!confirm('Delete this pairing?')) return;
+      try { await api('/api/admin/pairings/' + id, { method: 'DELETE' }); refresh(); }
+      catch (err) { alert('Delete failed: ' + err.message); }
+      return;
+    }
+    if (act === 'save-pairing') {
+      const fields = {};
+      row.querySelectorAll('[data-pf]').forEach(el => { fields[el.dataset.pf] = el.value; });
+      try { await api('/api/admin/pairings/' + id, { method: 'PUT', body: JSON.stringify(fields) }); flash('Pairing saved'); refresh(); }
+      catch (err) { alert('Save failed: ' + err.message); }
     }
   });
 
   // ============ FEEDBACK ============
   function renderFeedback() {
     const wrap = $('#feedbackList');
-    if (!DATA.feedback || !DATA.feedback.length) {
-      wrap.innerHTML = '<div class="card muted" style="margin:0;">No feedback yet.</div>'; return;
-    }
-    wrap.innerHTML = DATA.feedback.map(f => '<div class="fb-card" data-id="' + esc(f.id) + '">'
-      + '<div class="fb-head"><div>'
-      +   '<div class="fb-stars">' + '★'.repeat(f.rating) + '☆'.repeat(5 - f.rating) + '</div>'
-      +   '<div class="fb-name">' + (esc(f.name) || 'Anonymous') + '</div>'
-      + '</div><div style="text-align:right">'
-      +   '<div class="fb-meta">' + new Date(f.timestamp).toLocaleString() + '</div>'
-      +   '<button class="del-mini" data-act="del-fb">Delete</button>'
-      + '</div></div>'
-      + (f.experience ? '<div class="fb-text">' + esc(f.experience) + '</div>' : '')
-      + (f.favoriteFlavor ? '<div class="fb-fav">Favorite tonight: <b>' + esc(f.favoriteFlavor) + '</b></div>' : '')
-      + '<div class="fb-fav">' + (f.wouldRecommend ? '✓ Would recommend' : '✗ Would not recommend') + '</div>'
-      + '</div>').join('');
+    if (!wrap) return;
+    const items = (DATA && DATA.feedback) || [];
+    if (!items.length) { wrap.innerHTML = '<div class="card muted">No feedback yet.</div>'; return; }
+    wrap.innerHTML = items.map(f => {
+      const r = Math.max(0, Math.min(5, f.rating || 0));
+      const stars = '★'.repeat(r) + '☆'.repeat(5 - r);
+      const when = f.timestamp ? new Date(f.timestamp).toLocaleString() : '';
+      return '<div class="card" data-fb-id="' + esc(f.id) + '">' +
+        '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">' +
+          '<div>' +
+            '<div class="fb-stars">' + stars + '</div>' +
+            '<div style="margin-top:4px;"><strong>' + esc(f.name || 'Anonymous') + '</strong>' +
+              '<span class="muted" style="margin-left:6px; font-size:12px;">' + esc(when) + '</span></div>' +
+            (f.experience ? '<p style="margin:8px 0 0; color:var(--ink); line-height:1.5;">' + esc(f.experience) + '</p>' : '') +
+            (f.favoriteFlavor ? '<div class="fb-fav">Favourite: <b>' + esc(f.favoriteFlavor) + '</b></div>' : '') +
+            '<div class="muted" style="font-size:12px; margin-top:4px;">' + (f.wouldRecommend ? 'Would recommend ✓' : 'Would not recommend') + '</div>' +
+          '</div>' +
+          '<button class="del-mini" data-act="del-feedback">Delete</button>' +
+        '</div></div>';
+    }).join('');
   }
-  $('#feedbackList').addEventListener('click', async e => {
-    if (e.target.dataset.act === 'del-fb') {
-      const id = e.target.closest('.fb-card').dataset.id;
-      if (confirm('Delete this feedback?')) {
-        try { await api('/api/admin/feedback/' + id, { method: 'DELETE' }); refresh(); }
-        catch (err) { alert('Delete failed: ' + err.message); }
-      }
-    }
+  const feedbackListEl = $('#feedbackList');
+  if (feedbackListEl) feedbackListEl.addEventListener('click', async e => {
+    if (e.target.dataset.act !== 'del-feedback') return;
+    const card = e.target.closest('[data-fb-id]'); if (!card) return;
+    if (!confirm('Delete this feedback?')) return;
+    try { await api('/api/admin/feedback/' + card.dataset.fbId, { method: 'DELETE' }); refresh(); }
+    catch (err) { alert('Delete failed: ' + err.message); }
   });
 
   // ============ DASHBOARD ============
   async function loadDashboard() {
-    let a; try { a = await api('/api/admin/analytics'); } catch (e) { return; }
-    $('#kpiViews').textContent = a.totalViews.toLocaleString();
-    $('#kpiVisitors').textContent = a.uniqueVisitors.toLocaleString();
-    $('#kpiFeedback').textContent = a.feedbackCount.toLocaleString();
-    const peakHour = a.hourlyTraffic.indexOf(Math.max.apply(null, a.hourlyTraffic));
-    $('#kpiPeak').textContent = a.totalViews ? (String(peakHour).padStart(2,'0') + ':00') : '—';
-    const max = Math.max.apply(null, [1].concat(a.hourlyTraffic));
-    $('#heatmap').innerHTML = a.hourlyTraffic.map((v, i) => {
-      const intensity = v / max;
-      const color = 'rgba(90, 26, 31, ' + (0.1 + intensity * 0.9) + ')';
-      return '<div class="h-cell" title="' + i + ':00 — ' + v + ' views" style="background:' + (v ? color : '#ece8e2') + '">' +
-             (i % 3 === 0 ? '<span class="lbl">' + i + '</span>' : '') + '</div>';
-    }).join('');
-    if (!a.topFlavors.length) {
-      $('#topFlavors').innerHTML = '<div class="muted">No flavor taps yet.</div>';
-    } else {
-      $('#topFlavors').innerHTML = a.topFlavors.map((f, i) =>
-        '<div class="top-row"><span class="rank">' + (i + 1) + '</span><span class="name">' + esc(f.name) + '</span><span class="count">' + f.count + '</span></div>'
-      ).join('');
-    }
+    try {
+      const a = await api('/api/admin/analytics');
+      const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      setText('kpiViews', a.totalViews != null ? a.totalViews : 0);
+      setText('kpiVisitors', a.uniqueVisitors != null ? a.uniqueVisitors : 0);
+      setText('kpiFeedback', ((DATA && DATA.feedback) || []).length);
+      const hours = a.hourly || new Array(24).fill(0);
+      const max = Math.max(1, ...hours);
+      let peakHour = 0; hours.forEach((h, i) => { if (h > hours[peakHour]) peakHour = i; });
+      setText('kpiPeak', max > 0 ? (peakHour + ':00') : '—');
+      const hm = document.getElementById('heatmap');
+      if (hm) {
+        hm.innerHTML = hours.map((h, i) => {
+          const intensity = max ? (h / max) : 0;
+          return '<div class="h-cell" style="background:rgba(90,26,31,' + (0.08 + intensity * 0.6) + ');"><span class="lbl">' + i + '</span></div>';
+        }).join('');
+      }
+      const tf = document.getElementById('topFlavors');
+      if (tf) {
+        const top = (a.topFlavors || []).slice(0, 8);
+        const allFlavors = ((DATA && DATA.pots) || []).flatMap(p => (p.flavors || []).map(f => ({ id: f.id, name: f.name })));
+        const libById = {}; ((DATA && DATA.library) || []).forEach(L => { libById[L.id] = L; });
+        tf.innerHTML = top.length ? top.map(t => {
+          const fl = allFlavors.find(x => x.id === t.flavorId);
+          const libMatch = !fl && t.flavorId && t.flavorId.indexOf('lib_') === 0 ? libById[t.flavorId.slice(4)] : null;
+          const name = (fl && fl.name) || (libMatch && libMatch.name) || t.flavorId;
+          return '<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #efe6cf;"><span>' + esc(name) + '</span><span class="muted">' + (t.count || 0) + '</span></div>';
+        }).join('') : '<div class="muted">No taps yet.</div>';
+      }
+    } catch (err) { /* silent */ }
   }
-  $('#resetAnalytics').addEventListener('click', async () => {
-    if (!confirm('Reset ALL analytics? This cannot be undone.')) return;
-    try { await api('/api/admin/analytics/reset', { method: 'POST' }); loadDashboard(); }
+  const resetBtn = $('#resetAnalytics');
+  if (resetBtn) resetBtn.addEventListener('click', async () => {
+    if (!confirm('Reset all analytics counts? This cannot be undone.')) return;
+    try { await api('/api/admin/analytics/reset', { method: 'POST' }); flash('Analytics reset'); loadDashboard(); }
     catch (err) { alert('Reset failed: ' + err.message); }
   });
 
+  // ============ BOOT + FLASH ============
+  let _flashTimer = null;
   function flash(msg) {
-    const t = document.createElement('div');
-    t.textContent = msg;
-    t.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%);' +
-      'background:var(--ink); color:var(--gold); padding:10px 18px; border-radius:6px;' +
-      'font-size:13px; letter-spacing:1px; box-shadow:0 8px 30px rgba(0,0,0,0.3); z-index:1000;';
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 1800);
+    let el = document.getElementById('_flash');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = '_flash';
+      el.style.cssText = 'position:fixed; top:18px; right:18px; z-index:9999; background:#1f6d4a; color:#fff; padding:10px 16px; border-radius:6px; font:500 13px/1 Inter, sans-serif; box-shadow:0 6px 18px rgba(0,0,0,0.2); opacity:0; transition:opacity 0.2s;';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(_flashTimer);
+    _flashTimer = setTimeout(() => { el.style.opacity = '0'; }, 1800);
   }
-
   checkAuth();
 })();

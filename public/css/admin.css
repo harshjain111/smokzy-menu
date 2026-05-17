@@ -543,3 +543,128 @@ body { font-family: var(--sans); background: var(--bg); color: var(--ink); font-
 .fb-text { margin-top: 10px; line-height: 1.5; color: var(--ink); }
 .fb-fav { margin-top: 6px; font-size: 12px; color: var(--muted); }
 .fb-fav b { color: var(--burgundy); }
+
+/* =====================================================================
+   POTS VIEW SWITCH + ASSIGNMENT GRID
+   ===================================================================== */
+.view-switch {
+  display: inline-flex; background: #f1ece1; padding: 3px; border-radius: 999px;
+  border: 1px solid #e0d6bf;
+}
+.vs-btn {
+  background: transparent; border: 0; padding: 6px 14px; cursor: pointer;
+  font-family: inherit; font-size: 12px; letter-spacing: 1.3px;
+  text-transform: uppercase; color: var(--muted);
+  border-radius: 999px; transition: all 0.15s;
+}
+.vs-btn:hover { color: var(--ink); }
+.vs-btn.active {
+  background: var(--ink); color: var(--gold-bright); font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.pot-grid-wrap { margin-top: 14px; }
+.ag-toolbar {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 10px;
+}
+.ag-stat {
+  font-size: 12px; color: var(--muted);
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.ag-search {
+  margin-left: auto; min-width: 200px;
+  padding: 7px 12px; border: 1px solid #d8cdb3; border-radius: 999px;
+  font-family: inherit; font-size: 13px;
+  background: #fbf6e9;
+}
+.ag-search:focus { outline: none; border-color: var(--gold, #c9a86a); }
+
+.ag-scroll {
+  overflow: auto; max-height: calc(100vh - 240px);
+  border: 1px solid #e3d8bf; border-radius: 8px;
+  background: #fbf6e9;
+  -webkit-overflow-scrolling: touch;
+}
+.ag-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: 13px;
+}
+.ag-table thead th {
+  position: sticky; top: 0; z-index: 5;
+  background: #ede4cf;
+  border-bottom: 1px solid #d6c9ad;
+  padding: 8px 6px; text-align: center;
+  font-family: inherit; font-weight: 600; color: var(--ink);
+}
+.ag-name-col {
+  position: sticky; left: 0; z-index: 6;
+  background: #ede4cf !important;
+  text-align: left !important;
+  min-width: 200px; padding-left: 14px !important;
+  border-right: 1px solid #d6c9ad;
+}
+.ag-pot-col { min-width: 110px; max-width: 140px; }
+.ag-pot-name {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 130px; margin: 0 auto;
+}
+.ag-pot-price {
+  font-size: 11px; color: var(--muted); margin-top: 2px;
+  font-weight: 400; letter-spacing: 0;
+}
+.ag-pot-imp { color: var(--burgundy); }
+
+.ag-sec th {
+  background: #f4ead0 !important;
+  font-size: 10px; letter-spacing: 3.5px; color: var(--gold, #a78a4a);
+  text-align: left !important; padding: 8px 14px !important;
+  border-bottom: 1px solid #e3d4ab; border-top: 1px solid #e3d4ab;
+  position: sticky; top: 50px; z-index: 4;
+}
+
+.ag-row td, .ag-row th { border-bottom: 1px solid #ece3c9; }
+.ag-row:nth-child(even) td { background: rgba(255,255,255,0.4); }
+.ag-row:hover td { background: rgba(199,168,106,0.10); }
+
+.ag-name-cell {
+  position: sticky; left: 0; z-index: 3;
+  background: #fbf6e9;
+  text-align: left; padding: 8px 14px;
+  font-weight: 500; min-width: 200px;
+  border-right: 1px solid #ece3c9;
+}
+.ag-row:nth-child(even) .ag-name-cell { background: #f7f0db; }
+.ag-row:hover .ag-name-cell { background: rgba(199,168,106,0.10); }
+.ag-name {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 16px; color: var(--ink); font-weight: 500;
+}
+.ag-name .ag-pop { color: var(--burgundy); font-size: 11px; }
+.ag-sub {
+  font-size: 10px; letter-spacing: 1.5px; color: var(--muted);
+  text-transform: uppercase; margin-top: 2px;
+}
+
+.ag-cell {
+  text-align: center; padding: 0; cursor: pointer;
+  width: 44px; height: 44px;
+  transition: background 0.15s;
+  user-select: none;
+}
+.ag-cell:hover { background: rgba(90,26,31,0.08); }
+.ag-cell[data-linked="1"] { background: rgba(31,109,74,0.12); }
+.ag-cell[data-linked="1"]:hover { background: rgba(31,109,74,0.22); }
+.ag-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  font-size: 13px; color: transparent;
+  border: 1.5px solid #d6c9ad; background: rgba(255,255,255,0.5);
+  transition: all 0.15s;
+}
+.ag-cell:hover .ag-mark { border-color: var(--burgundy); }
+.ag-cell[data-linked="1"] .ag-mark {
+  background: #1f6d4a; border-color: #1f6d4a; color: #fff;
+}
+.ag-cell[data-busy="1"] .ag-mark { opacity: 0.5; }

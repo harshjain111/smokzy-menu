@@ -50,18 +50,40 @@ app.post('/api/admin/upload', requireAdmin, (req, res) => {
   });
 });
 
+// ---- DYNAMIC PRICING ----
+// Single source of truth for every flavour price:
+//   signature → pot.basePrice
+//   imported  → pot.basePrice + settings.importedUpcharge
+// Per-flavour `price` fields are ignored (kept null in the DB by schema-v5).
+function priceFor(pot, fl, upcharge) {
+  const base = Number((pot && pot.basePrice) || 0);
+  const blend = (fl && fl.blendType) || 'signature';
+  const up = Number(upcharge || 0);
+  return blend === 'imported' ? base + up : base;
+}
+function enrichPotPrices(pots, upcharge) {
+  return (pots || []).map(p => ({
+    ...p,
+    importedPrice: Number(p.basePrice || 0) + Number(upcharge || 0),
+    flavors: (p.flavors || []).map(f => ({ ...f, price: priceFor(p, f, upcharge) }))
+  }));
+}
+
 // public read
 app.get('/api/menu', async (req, res) => {
   try {
     const settings = await db.getSettings();
-    const [pots, pairings, library] = await Promise.all([db.getPots(), db.getPairings(), db.listLibrary()]);
+    const [potsRaw, pairings, library] = await Promise.all([db.getPots(), db.getPairings(), db.listLibrary()]);
+    const upcharge = Number(settings.importedUpcharge || 0);
+    const pots = enrichPotPrices(potsRaw, upcharge);
     res.json({
       brand: settings.brandName || 'Smokzy',
       settings: {
         brandName: settings.brandName || 'SMOKZY', tagline: settings.tagline || '',
         logoUrl: settings.logoUrl || '', partnerName: settings.partnerName || '',
         partnerLogoUrl: settings.partnerLogoUrl || '',
-        highlights: settings.highlights || { enabled: false, items: [] }
+        highlights: settings.highlights || { enabled: false, items: [] },
+        importedUpcharge: upcharge
       },
       cover: settings.cover || {}, founderNote: settings.founderNote || {},
       pots, pairings, library
