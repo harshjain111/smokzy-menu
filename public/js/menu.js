@@ -91,18 +91,13 @@
       '</div>');
   }
   function renderFounderQuote() {
-    // LEFT page of the spread — an epigraph that sets the mood
+    // LEFT page — quiet epigraph that sets the mood, no labels
     const s = (DATA && DATA.settings) || {};
     const f = (DATA && DATA.founderNote) || {};
     const epigraph = (f.epigraph && f.epigraph.trim()) || 'Every great evening begins the moment you exhale.';
     return face('founder-epigraph back',
       '<div class="fn-corner-top"></div>' +
       '<div class="fn-epigraph-stage">' +
-        '<div class="fn-prologue-label">' +
-          '<span class="fn-rule"></span>' +
-          '<span class="fn-prologue-text">PROLOGUE</span>' +
-          '<span class="fn-rule"></span>' +
-        '</div>' +
         '<div class="fn-quote-wrap">' +
           '<div class="fn-quote-mark fn-quote-open">\u201C</div>' +
           '<blockquote class="fn-quote">' + esc(epigraph) + '</blockquote>' +
@@ -115,21 +110,18 @@
       '<span class="page-tag" style="left:24px;">i</span>');
   }
   function renderFounderBody(f) {
-    // RIGHT page — the opening chapter
-    const s = (DATA && DATA.settings) || {};
+    // RIGHT page — title, body paragraphs, single-line closing call, signature
     const title = ((f && f.title) || 'Where it Begins').trim();
     const rawBody = ((f && f.body) || '').trim();
     const signer = ((f && f.founderName) || '').trim();
 
-    // Split into proper paragraphs.
-    // - Double newline (or blank line) marks a new paragraph
-    // - A paragraph made of multiple lines is kept together, joined by spaces
-    //   (so the bad mid-sentence breaks from before disappear)
+    // proper paragraph splitting: blank line = new paragraph; single newlines
+    // inside a paragraph become spaces (so user line-wraps don't survive).
     const paragraphs = rawBody.split(/\n\s*\n+/).map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
 
-    // The very last paragraph, if it contains short staccato lines separated
-    // by a period, becomes a stylized "closing call" (Slow down. Choose
-    // consciously. Let the experience unfold.)
+    // If the final paragraph is several short staccato sentences (Slow down.
+    // Choose consciously. Let the experience unfold.), render them on a
+    // single inline line with subtle dot separators.
     let closing = '';
     let bodyParas = paragraphs;
     if (paragraphs.length) {
@@ -138,27 +130,29 @@
       const allShort = sentences.length >= 2 && sentences.every(x => x.length <= 32);
       if (allShort) {
         closing = '<div class="fn-closing">' +
-          sentences.map((s2, i) =>
-            (i > 0 ? '<span class="fn-closing-sep">\u2756</span>' : '') +
-            '<span class="fn-closing-line">' + esc(s2.replace(/\.$/,'')) + '</span>'
-          ).join('') +
+          sentences.map(s2 => '<em>' + esc(s2.replace(/\.$/, '')) + '</em>')
+                   .join(' <span class="fn-closing-sep">\u00B7</span> ') +
         '</div>';
         bodyParas = paragraphs.slice(0, -1);
       }
     }
 
-    // Pull-quote heuristic: a short standalone paragraph (single sentence
-    // <= 70 chars) gets a pull-quote treatment.
     const renderedParas = bodyParas.map((p, i) => {
-      const isPull = p.length <= 70 && !/[\n]/.test(p) && (p.match(/[.!?]/g) || []).length <= 1;
+      // very short standalone paragraph → pull quote
+      const isPull = p.length <= 70 && (p.match(/[.!?]/g) || []).length <= 1;
       if (isPull && i !== 0) {
         return '<blockquote class="fn-pullquote">' + esc(p) + '</blockquote>';
       }
-      if (i === 0 && p.length > 1) {
-        // first paragraph gets a drop cap
-        const first = p.charAt(0);
-        const rest = p.slice(1);
-        return '<p class="fn-para fn-para-first"><span class="fn-dropcap">' + esc(first) + '</span>' + esc(rest) + '</p>';
+      // first paragraph gets a small-caps opening phrase (first ~3 words)
+      if (i === 0) {
+        const words = p.split(/\s+/);
+        const n = Math.min(3, words.length);
+        const opener = words.slice(0, n).join(' ');
+        const rest = words.slice(n).join(' ');
+        return '<p class="fn-para fn-para-first">' +
+          '<span class="fn-opening">' + esc(opener) + '</span>' +
+          (rest ? ' ' + esc(rest) : '') +
+        '</p>';
       }
       return '<p class="fn-para">' + esc(p) + '</p>';
     }).join('');
@@ -166,7 +160,6 @@
     return face('founder-chapter front',
       '<div class="fn-corner-top fn-corner-top-right"></div>' +
       '<div class="fn-chapter-head">' +
-        '<div class="fn-chapter-kicker">CHAPTER ONE</div>' +
         '<h2 class="fn-chapter-title">' + esc(title) + '</h2>' +
         '<div class="fn-chapter-divider"><span></span><i>\u2756</i><span></span></div>' +
       '</div>' +
@@ -174,10 +167,7 @@
         renderedParas +
         closing +
       '</div>' +
-      (signer ? '<div class="fn-signature">' +
-        '<span class="fn-sig-rule"></span>' +
-        '<span class="fn-sig-text">\u2014 ' + esc(signer) + '</span>' +
-      '</div>' : '') +
+      (signer ? '<div class="fn-signature"><span class="fn-sig-text">\u2014 ' + esc(signer) + '</span></div>' : '') +
       '<span class="page-tag">ii</span>');
   }
   // ---------- HIGHLIGHTS (magazine-style spread) ----------
