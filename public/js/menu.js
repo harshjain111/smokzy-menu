@@ -385,11 +385,8 @@
       el.className = 'page right'; el.dataset.leaf = idx;
       el.style.zIndex = (leaves.length - idx);
       el.appendChild(leaf.front); el.appendChild(leaf.back);
-      el.addEventListener('click', e => {
-        if (e.target.closest('.flavor-list, .pairings, .feedback, .highlights')) return;
-        if (e.target.closest('input, textarea, button, select, .qc-row, label, .stars span, .qc-chip, .qc-suggest, .qc-filters, .qc-toolbar, .qc-filter-panel, .hl-card, .hl-cta')) return;
-        nextPage();
-      });
+      // No per-page click handler — the global edge-tap handler below
+      // handles next/prev navigation across every page consistently.
       book.appendChild(el);
     });
   }
@@ -659,6 +656,37 @@
       .finally(() => { btn.disabled = false; btn.textContent = 'Submit feedback'; });
   });
 
+  // ====== EDGE-TAP NAVIGATION ======
+  // Tapping the LEFT half of the screen goes to the previous page,
+  // tapping the RIGHT half goes to the next page. Works on every page
+  // including the flavour list, pairings, highlights and feedback prompts.
+  // Anything interactive (buttons, flavour rows, modals, form fields, etc.)
+  // is ignored so taps on those still do their own thing.
+  const NAV_SKIP = [
+    'button', 'a', 'input', 'textarea', 'select', 'label',
+    '.qc-row', '.qc-chip', '.qc-suggest', '.qc-toolbar', '.qc-filter-panel', '.qc-filters',
+    '.hl-card', '.hl-cta',
+    '.modal', '.modal-card', '.pp-item', '.pp-card',
+    '.stars span', '.navBtn', '.zoom-controls',
+    '.top-home-btn',
+    '[data-go]', '[data-close]', '[data-act]'
+  ].join(',');
+  document.addEventListener('click', e => {
+    // only act while the book view is the visible one
+    if ($('#menuView').hidden) return;
+    // never flip when a modal is open
+    if (modal && modal.classList.contains('open')) return;
+    if (potPicker && potPicker.classList.contains('open')) return;
+    // never flip when the user tapped something interactive
+    if (e.target.closest(NAV_SKIP)) return;
+    if (animating) return;
+    const w = window.innerWidth || document.documentElement.clientWidth;
+    const x = e.clientX;
+    // 10% dead zone in the centre so accidental centre taps do nothing
+    if (x < w * 0.45) prevPage();
+    else if (x > w * 0.55) nextPage();
+  });
+
   document.addEventListener('keydown', e => {
     if (!$('#menuView').hidden) {
       if (e.key === 'ArrowRight') nextPage();
@@ -714,6 +742,7 @@
       setTimeout(() => {
         const el = document.documentElement;
         const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        if (req) { try { req.call(el); } catch (e) {} }
       }, 250);
     };
     window.addEventListener('click', goFs, { once: true });
