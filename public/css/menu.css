@@ -1530,3 +1530,324 @@ body {
   .hmg-blurb { font-size: 12px; }
   .hmg-label { font-size: 8px; letter-spacing: 3px; }
 }
+
+/* ====================================================================
+   FOUNDER'S NOTE — book-preface treatment
+   Left = epigraph / prologue marker. Right = chapter opening with
+   kicker, big serif title, ornate divider, drop cap, paragraphs,
+   pull-quote, stylized closing call, signature.
+   ==================================================================== */
+
+/* ---------- LEFT (epigraph) ---------- */
+.founder-epigraph {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(199,162,98,0.10), transparent 60%),
+    linear-gradient(180deg, #fcf7ea 0%, #f3eada 100%);
+}
+.founder-epigraph::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(135deg, rgba(120,90,50,0.020) 0 2px, transparent 2px 4px);
+  pointer-events: none;
+  z-index: 0;
+}
+.founder-epigraph > * { position: relative; z-index: 1; }
+
+.fn-corner-top, .fn-corner-bottom {
+  position: absolute;
+  width: 60px; height: 60px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+.fn-corner-top {
+  top: 18px; left: 18px;
+  border-top: 1px solid var(--gold);
+  border-left: 1px solid var(--gold);
+}
+.fn-corner-bottom {
+  bottom: 18px; right: 18px;
+  border-bottom: 1px solid var(--gold);
+  border-right: 1px solid var(--gold);
+}
+
+.fn-epigraph-stage {
+  margin: auto;
+  text-align: center;
+  padding: 30px 36px;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.fn-prologue-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 220px;
+}
+.fn-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.fn-prologue-text {
+  font-family: var(--sans);
+  font-size: 9px;
+  letter-spacing: 5px;
+  color: var(--gold);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.fn-quote-wrap {
+  position: relative;
+  padding: 0 12px;
+}
+.fn-quote-mark {
+  font-family: var(--serif);
+  font-size: 64px;
+  color: var(--gold);
+  line-height: 0.6;
+  font-weight: 500;
+  position: absolute;
+  opacity: 0.7;
+}
+.fn-quote-open { top: -10px; left: -8px; }
+.fn-quote-close { bottom: -28px; right: -8px; }
+.fn-quote {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(20px, 2.5vw, 26px);
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.5;
+  margin: 0;
+  letter-spacing: 0.2px;
+  padding: 14px 6px;
+}
+
+.fn-quote-rule {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  color: var(--gold);
+}
+.fn-quote-rule span {
+  width: 30px;
+  height: 1px;
+  background: var(--gold);
+  opacity: 0.6;
+}
+.fn-quote-rule i {
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0;
+  opacity: 0.8;
+}
+
+.fn-epigraph-cite {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-soft);
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+/* ---------- RIGHT (chapter) ---------- */
+.founder-chapter {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(199,162,98,0.08), transparent 60%),
+    linear-gradient(180deg, #fcf7ea 0%, #f3eada 100%);
+}
+.founder-chapter::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(135deg, rgba(120,90,50,0.020) 0 2px, transparent 2px 4px);
+  pointer-events: none;
+  z-index: 0;
+}
+.founder-chapter > * { position: relative; z-index: 1; }
+
+.fn-corner-top-right {
+  top: 18px; right: 18px;
+  left: auto;
+  border-top: 1px solid var(--gold);
+  border-right: 1px solid var(--gold);
+  border-left: 0;
+}
+
+.fn-chapter-head {
+  padding: 36px 38px 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.fn-chapter-kicker {
+  font-family: var(--sans);
+  font-size: 10px;
+  letter-spacing: 5px;
+  color: var(--gold);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.fn-chapter-title {
+  font-family: var(--serif);
+  font-size: clamp(30px, 4.8vw, 42px);
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: 0.4px;
+  line-height: 1.05;
+}
+.fn-chapter-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px auto 0;
+  color: var(--gold);
+  max-width: 200px;
+}
+.fn-chapter-divider span {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.fn-chapter-divider i {
+  font-style: normal;
+  font-size: 13px;
+}
+
+.fn-chapter-body {
+  padding: 10px 38px 14px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  font-family: var(--serif);
+  color: var(--ink);
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+.fn-chapter-body::-webkit-scrollbar { width: 4px; }
+.fn-chapter-body::-webkit-scrollbar-thumb { background: rgba(28,24,20,0.2); border-radius: 4px; }
+
+.fn-para {
+  font-size: 15px;
+  line-height: 1.65;
+  margin: 0 0 12px;
+  color: var(--ink);
+  letter-spacing: 0.1px;
+}
+.fn-para:last-child { margin-bottom: 0; }
+
+.fn-para-first { margin-top: 4px; }
+.fn-dropcap {
+  float: left;
+  font-family: var(--serif);
+  font-size: 54px;
+  line-height: 0.85;
+  color: var(--burgundy);
+  font-weight: 600;
+  margin: 4px 8px 0 0;
+  padding-top: 2px;
+}
+
+.fn-pullquote {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 19px;
+  color: var(--burgundy);
+  text-align: center;
+  margin: 18px auto;
+  padding: 12px 22px;
+  max-width: 340px;
+  line-height: 1.4;
+  position: relative;
+  letter-spacing: 0.2px;
+}
+.fn-pullquote::before, .fn-pullquote::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 1px;
+  background: var(--gold);
+  opacity: 0.7;
+}
+.fn-pullquote::before { top: 0; }
+.fn-pullquote::after  { bottom: 0; }
+
+.fn-closing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 22px auto 10px;
+  padding-top: 16px;
+  border-top: 1px dotted rgba(199,162,98,0.45);
+  max-width: 380px;
+}
+.fn-closing-line {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink);
+  letter-spacing: 0.3px;
+}
+.fn-closing-sep {
+  font-style: normal;
+  color: var(--gold);
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.fn-signature {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 38px 22px;
+  flex-shrink: 0;
+}
+.fn-sig-rule {
+  flex: 0 0 60px;
+  height: 1px;
+  background: var(--gold);
+  opacity: 0.6;
+}
+.fn-sig-text {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--burgundy);
+  letter-spacing: 0.5px;
+}
+
+/* narrow viewport */
+@media (max-width: 520px) {
+  .fn-chapter-head { padding: 26px 24px 10px; }
+  .fn-chapter-body { padding: 8px 24px 12px; }
+  .fn-chapter-title { font-size: 28px; }
+  .fn-para { font-size: 14px; }
+  .fn-dropcap { font-size: 46px; }
+  .fn-pullquote { font-size: 16px; padding: 10px 16px; }
+}

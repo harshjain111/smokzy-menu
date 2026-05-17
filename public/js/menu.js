@@ -91,21 +91,95 @@
       '</div>');
   }
   function renderFounderQuote() {
-    return face('founder back',
-      '<div style="margin:auto; text-align:center; padding:20px;">' +
-        '<div style="font-family:var(--serif); font-size:64px; color:var(--gold); line-height:1;">"</div>' +
-        '<p style="font-family:var(--serif); font-style:italic; font-size:22px; color:var(--ink); line-height:1.6; max-width:280px; margin:0 auto;">Every great evening begins the moment you exhale.</p>' +
-        '<div style="margin-top:24px; width:40px; height:1px; background:var(--gold); margin-left:auto; margin-right:auto;"></div>' +
-      '</div><span class="page-tag" style="left:24px;">i</span>');
+    // LEFT page of the spread — an epigraph that sets the mood
+    const s = (DATA && DATA.settings) || {};
+    const f = (DATA && DATA.founderNote) || {};
+    const epigraph = (f.epigraph && f.epigraph.trim()) || 'Every great evening begins the moment you exhale.';
+    return face('founder-epigraph back',
+      '<div class="fn-corner-top"></div>' +
+      '<div class="fn-epigraph-stage">' +
+        '<div class="fn-prologue-label">' +
+          '<span class="fn-rule"></span>' +
+          '<span class="fn-prologue-text">PROLOGUE</span>' +
+          '<span class="fn-rule"></span>' +
+        '</div>' +
+        '<div class="fn-quote-wrap">' +
+          '<div class="fn-quote-mark fn-quote-open">\u201C</div>' +
+          '<blockquote class="fn-quote">' + esc(epigraph) + '</blockquote>' +
+          '<div class="fn-quote-mark fn-quote-close">\u201D</div>' +
+        '</div>' +
+        '<div class="fn-quote-rule"><span></span><i>\u2756</i><span></span></div>' +
+        '<div class="fn-epigraph-cite">An invitation from ' + esc(s.brandName || 'Smokzy') + '</div>' +
+      '</div>' +
+      '<div class="fn-corner-bottom"></div>' +
+      '<span class="page-tag" style="left:24px;">i</span>');
   }
   function renderFounderBody(f) {
-    return face('founder front',
-      '<h2>' + esc((f && f.title) || 'A note from the founder') + '</h2>' +
-      '<div class="body">' + esc((f && f.body) || '').replace(/\n/g, '<br>') + '</div>' +
-      '<div class="signature">' + esc((f && f.founderName) || '') + '</div>' +
+    // RIGHT page — the opening chapter
+    const s = (DATA && DATA.settings) || {};
+    const title = ((f && f.title) || 'Where it Begins').trim();
+    const rawBody = ((f && f.body) || '').trim();
+    const signer = ((f && f.founderName) || '').trim();
+
+    // Split into proper paragraphs.
+    // - Double newline (or blank line) marks a new paragraph
+    // - A paragraph made of multiple lines is kept together, joined by spaces
+    //   (so the bad mid-sentence breaks from before disappear)
+    const paragraphs = rawBody.split(/\n\s*\n+/).map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
+
+    // The very last paragraph, if it contains short staccato lines separated
+    // by a period, becomes a stylized "closing call" (Slow down. Choose
+    // consciously. Let the experience unfold.)
+    let closing = '';
+    let bodyParas = paragraphs;
+    if (paragraphs.length) {
+      const last = paragraphs[paragraphs.length - 1];
+      const sentences = last.split(/(?<=\.)\s+/).map(x => x.trim()).filter(Boolean);
+      const allShort = sentences.length >= 2 && sentences.every(x => x.length <= 32);
+      if (allShort) {
+        closing = '<div class="fn-closing">' +
+          sentences.map((s2, i) =>
+            (i > 0 ? '<span class="fn-closing-sep">\u2756</span>' : '') +
+            '<span class="fn-closing-line">' + esc(s2.replace(/\.$/,'')) + '</span>'
+          ).join('') +
+        '</div>';
+        bodyParas = paragraphs.slice(0, -1);
+      }
+    }
+
+    // Pull-quote heuristic: a short standalone paragraph (single sentence
+    // <= 70 chars) gets a pull-quote treatment.
+    const renderedParas = bodyParas.map((p, i) => {
+      const isPull = p.length <= 70 && !/[\n]/.test(p) && (p.match(/[.!?]/g) || []).length <= 1;
+      if (isPull && i !== 0) {
+        return '<blockquote class="fn-pullquote">' + esc(p) + '</blockquote>';
+      }
+      if (i === 0 && p.length > 1) {
+        // first paragraph gets a drop cap
+        const first = p.charAt(0);
+        const rest = p.slice(1);
+        return '<p class="fn-para fn-para-first"><span class="fn-dropcap">' + esc(first) + '</span>' + esc(rest) + '</p>';
+      }
+      return '<p class="fn-para">' + esc(p) + '</p>';
+    }).join('');
+
+    return face('founder-chapter front',
+      '<div class="fn-corner-top fn-corner-top-right"></div>' +
+      '<div class="fn-chapter-head">' +
+        '<div class="fn-chapter-kicker">CHAPTER ONE</div>' +
+        '<h2 class="fn-chapter-title">' + esc(title) + '</h2>' +
+        '<div class="fn-chapter-divider"><span></span><i>\u2756</i><span></span></div>' +
+      '</div>' +
+      '<div class="fn-chapter-body">' +
+        renderedParas +
+        closing +
+      '</div>' +
+      (signer ? '<div class="fn-signature">' +
+        '<span class="fn-sig-rule"></span>' +
+        '<span class="fn-sig-text">\u2014 ' + esc(signer) + '</span>' +
+      '</div>' : '') +
       '<span class="page-tag">ii</span>');
   }
-
   // ---------- HIGHLIGHTS (magazine-style spread) ----------
   function resolveHighlight(item) {
     if (!item || !item.libraryId) return null;
