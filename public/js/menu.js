@@ -592,7 +592,43 @@
   });
 
   // ---------- POT PICKER (for highlight CTAs) ----------
-  const potPicker = $('#potPickerModal');
+  // Build the modal at runtime if it's missing from the cached index.html.
+  // This makes the highlight CTA work even on devices whose service worker
+  // is still serving an older index.html that doesn't have #potPickerModal.
+  function ensurePotPicker() {
+    let pm = document.getElementById('potPickerModal');
+    if (!pm) {
+      pm = document.createElement('div');
+      pm.id = 'potPickerModal';
+      pm.className = 'modal pot-picker-modal';
+      pm.setAttribute('role', 'dialog');
+      pm.setAttribute('aria-modal', 'true');
+      pm.setAttribute('aria-hidden', 'true');
+      pm.innerHTML =
+        '<div class="modal-backdrop" data-close></div>' +
+        '<div class="modal-card pp-card" role="document">' +
+          '<button class="modal-close" data-close aria-label="Close">×</button>' +
+          '<div class="modal-body" id="potPickerBody"></div>' +
+        '</div>';
+      document.body.appendChild(pm);
+    }
+    // Wire up once (whether the modal was in the HTML or just created).
+    if (!pm.dataset.wired) {
+      pm.dataset.wired = '1';
+      pm.addEventListener('click', e => {
+        if (e.target.matches('[data-close]')) { closePotPicker(); return; }
+        const item = e.target.closest('[data-pp-pot]');
+        if (item) {
+          const potId = item.dataset.ppPot;
+          const flavorId = item.dataset.ppFlavor;
+          closePotPicker();
+          setTimeout(() => openFlavor(potId, flavorId), 120);
+        }
+      });
+    }
+    return pm;
+  }
+  let potPicker = ensurePotPicker();
   function findPotsForLibrary(libraryId) {
     const pots = (DATA && DATA.pots) || [];
     const matches = [];
@@ -606,8 +642,17 @@
     return matches;
   }
   function openPotPicker(libraryId) {
+    potPicker = ensurePotPicker();
     const lib = ((DATA && DATA.library) || []).find(L => L.id === libraryId);
-    if (!lib || !potPicker) return;
+    // If the library flavour is gone or the data hasn't loaded yet, still
+    // open the modal with a graceful message instead of failing silently.
+    if (!lib) {
+      const body = document.getElementById('potPickerBody');
+      if (body) body.innerHTML = '<div class="pp-empty">This flavour is no longer available. Please ask your host.</div>';
+      potPicker.classList.add('open');
+      potPicker.setAttribute('aria-hidden', 'false');
+      return;
+    }
     const matches = findPotsForLibrary(libraryId);
     const head = '<div class="pp-head">' +
       '<div class="pp-kicker">CHOOSE YOUR POT</div>' +
@@ -642,18 +687,7 @@
     potPicker.classList.remove('open');
     potPicker.setAttribute('aria-hidden', 'true');
   }
-  if (potPicker) {
-    potPicker.addEventListener('click', e => {
-      if (e.target.matches('[data-close]')) { closePotPicker(); return; }
-      const item = e.target.closest('[data-pp-pot]');
-      if (item) {
-        const potId = item.dataset.ppPot;
-        const flavorId = item.dataset.ppFlavor;
-        closePotPicker();
-        setTimeout(() => openFlavor(potId, flavorId), 120);
-      }
-    });
-  }
+  // (pot picker click handlers are attached inside ensurePotPicker)
 
   const modal = $('#flavorModal');
   function openFlavor(potId, flavorId) {
