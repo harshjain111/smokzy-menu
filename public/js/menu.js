@@ -106,7 +106,7 @@
       '<span class="page-tag">ii</span>');
   }
 
-  // ---------- HIGHLIGHTS (magazine page) ----------
+  // ---------- HIGHLIGHTS (magazine-style spread) ----------
   function resolveHighlight(item) {
     if (!item || !item.libraryId) return null;
     const lib = (DATA && DATA.library) || [];
@@ -124,84 +124,102 @@
       description: ref.description || ''
     };
   }
-  function highlightCardHtml(h, side) {
+  function strengthDotsHtml(label) {
+    const filled = label === 'strong' ? 5 : label === 'mild' ? 3 : 1;
+    let h = '<span class="hmg-strength" title="Strength: ' + esc(label || 'mild') + '">';
+    for (let i = 0; i < 5; i++) h += '<i class="' + (i < filled ? 'on' : '') + '"></i>';
+    return h + '</span>';
+  }
+  function magCoverHtml(h, opts) {
+    opts = opts || {};
     if (!h) {
-      return '<div class="hl-card hl-card-empty hl-' + side + '"><div class="hl-empty">Curating next month\'s pick…</div></div>';
-    }
-    const tags = (h.tags || []).slice(0, 3).map(t => '<span class="hl-tag">' + esc(t) + '</span>').join('');
-    const img = h.image
-      ? '<div class="hl-image" style="background-image:url(\'' + esc(h.image) + '\')"></div>'
-      : '<div class="hl-image hl-image-fallback"><span>' + esc((h.name || '?').charAt(0).toUpperCase()) + '</span></div>';
-    const blendUpper = (h.blendType || 'signature').toUpperCase();
-    return '<div class="hl-card hl-' + side + '" data-library-id="' + esc(h.libraryId) + '">' +
-      img +
-      '<div class="hl-body">' +
-        '<div class="hl-kicker"><span class="hl-dot">◆</span> FEATURED THIS MONTH</div>' +
-        '<h3 class="hl-name">' + esc(h.name) + '</h3>' +
-        '<div class="hl-meta">' +
-          '<span class="hl-blend">' + blendUpper + '</span>' +
-          '<span class="hl-sep">·</span>' +
-          '<span class="hl-strength">' + esc(h.strengthLabel.toUpperCase()) + '</span>' +
+      return (opts.masthead ? '<div class="hmg-masthead"><span class="hmg-rule"></span><span class="hmg-issue">' + esc(opts.masthead) + '</span><span class="hmg-rule"></span></div>' : '') +
+        '<div class="hmg-empty">' +
+          '<span class="hmg-empty-mark">✦</span>' +
+          '<p>Curating this month\'s ' + esc(opts.emptyLabel || 'pick') + '…</p>' +
+          '<small>Check back soon.</small>' +
         '</div>' +
-        (h.tagline ? '<p class="hl-tagline">' + esc(h.tagline) + '</p>' : '') +
-        (tags ? '<div class="hl-tags">' + tags + '</div>' : '') +
-        '<button class="hl-cta" data-act="try-highlight" data-library-id="' + esc(h.libraryId) + '" type="button">' +
-          '<span>Try this</span><span class="hl-arr">→</span>' +
+        '<span class="hmg-pagenum">' + esc(opts.pageNum || '') + '</span>';
+    }
+    const tags = (h.tags || []).slice(0, 3).map(t =>
+      '<span class="hmg-tag">' + esc(t) + '</span>').join('');
+    const blurb = (h.tagline || h.description || '').trim();
+    const blendUpper = (h.blendType || 'signature').toUpperCase();
+    const masthead = opts.masthead
+      ? '<div class="hmg-masthead">' +
+          '<span class="hmg-rule"></span>' +
+          '<span class="hmg-issue">' + esc(opts.masthead) + '</span>' +
+          '<span class="hmg-rule"></span>' +
+        '</div>'
+      : '<div class="hmg-rule-only"></div>';
+    const badge = opts.badge
+      ? '<div class="hmg-badge"><span class="hmg-badge-star">★</span> ' + esc(opts.badge) + '</div>'
+      : '';
+    const image = h.image
+      ? '<div class="hmg-image" style="background-image:url(\'' + esc(h.image) + '\')">' + badge + '<div class="hmg-image-corner"></div></div>'
+      : '<div class="hmg-image hmg-image-fallback">' + badge + '<span>' + esc((h.name || '?').charAt(0).toUpperCase()) + '</span></div>';
+    const editorNote = opts.showEditorNote
+      ? '<div class="hmg-editor-note">' +
+          '<span class="hmg-ornament">✦ ✦ ✦</span>' +
+          '<p>"These are the two we\'ve been talking about all month. Order one — or both — and let your evening unfold."</p>' +
+          '<div class="hmg-signature">— The ' + esc(((DATA && DATA.settings && DATA.settings.brandName) || 'Smokzy')) + ' Curation</div>' +
+        '</div>'
+      : '';
+    return masthead +
+      '<div class="hmg-frame">' + image + '</div>' +
+      '<div class="hmg-body">' +
+        '<div class="hmg-kicker">' + esc(opts.kicker || 'FEATURED') + '</div>' +
+        '<h2 class="hmg-name">' + esc(h.name) + '</h2>' +
+        '<div class="hmg-meta">' +
+          '<span class="hmg-blend">' + blendUpper + '</span>' +
+          '<span class="hmg-dot">·</span>' +
+          strengthDotsHtml(h.strengthLabel) +
+          '<span class="hmg-strength-label">' + esc(h.strengthLabel.toUpperCase()) + '</span>' +
+        '</div>' +
+        (blurb ? '<p class="hmg-blurb"><span class="hmg-dropcap">' + esc(blurb.charAt(0)) + '</span>' + esc(blurb.slice(1)) + '</p>' : '') +
+        (tags ? '<div class="hmg-tags">' + tags + '</div>' : '') +
+        '<button class="hmg-cta" data-act="try-highlight" data-library-id="' + esc(h.libraryId) + '" type="button">' +
+          '<span class="hmg-cta-text">TAP TO TRY</span>' +
+          '<span class="hmg-cta-sub">' + esc(h.name.toUpperCase()) + '</span>' +
+          '<span class="hmg-arr">→</span>' +
         '</button>' +
       '</div>' +
-    '</div>';
+      editorNote +
+      '<span class="hmg-pagenum">' + esc(opts.pageNum || '') + '</span>';
   }
-  function renderHighlightsLeaf() {
+  function renderHighlightsIntro() {
+    // LEFT page of the magazine spread — the headliner
     const s = (DATA && DATA.settings) || {};
     const hl = s.highlights || { enabled: false, items: [] };
     const items = (hl.items || []).slice(0, 2);
     const a = resolveHighlight(items[0]);
-    const b = resolveHighlight(items[1]);
-    return face('highlights front',
-      '<div class="hl-stage">' +
-        '<div class="hl-head">' +
-          '<span class="hl-rule"></span>' +
-          '<span class="hl-issue">' +
-            '<span class="hl-word">CURATED</span>' +
-            '<span class="hl-word-gap"></span>' +
-            '<span class="hl-word">SELECTIONS</span>' +
-          '</span>' +
-          '<span class="hl-rule"></span>' +
-        '</div>' +
-        '<div class="hl-subhead"><em>two flavours, hand-picked for this season</em></div>' +
-        '<div class="hl-spread">' +
-          highlightCardHtml(a, 'left') +
-          '<div class="hl-vdivider"><span></span><i>✦</i><span></span></div>' +
-          highlightCardHtml(b, 'right') +
-        '</div>' +
-        '<div class="hl-foot">tap <em>Try this</em> to choose a pot →</div>' +
-      '</div>' +
-      '<span class="page-tag">★</span>');
+    return face('highlights-mag back',
+      magCoverHtml(a, {
+        masthead: ((s.brandName || 'SMOKZY').toUpperCase()) + ' MONTHLY · ISSUE ' + (new Date()).getFullYear(),
+        kicker: '— THE HEADLINER —',
+        badge: 'STAR OF THE MONTH',
+        pageNum: 'i',
+        emptyLabel: 'headliner'
+      })
+    );
   }
-  function renderHighlightsIntro() {
+  function renderHighlightsLeaf() {
+    // RIGHT page of the magazine spread — the discovery + editor's note
     const s = (DATA && DATA.settings) || {};
-    const brand = esc(s.brandName || 'Smokzy');
-    return face('highlights-intro back',
-      '<div class="hli-stage">' +
-        '<div class="hli-top">' +
-          '<span class="hli-rule"></span>' +
-          '<span class="hli-issue">' +
-            '<span class="hli-word">VOL</span>' +
-            '<span class="hli-word-gap"></span>' +
-            '<span class="hli-word">' + (new Date()).getFullYear() + '</span>' +
-          '</span>' +
-          '<span class="hli-rule"></span>' +
-        '</div>' +
-        '<div class="hli-center">' +
-          '<div class="hli-mark">✦</div>' +
-          '<div class="hli-title">Featured<br><em>This Month</em></div>' +
-          '<div class="hli-line"></div>' +
-          '<div class="hli-sub">two flavours, hand-picked by ' + brand + '</div>' +
-        '</div>' +
-        '<div class="hli-foot">turn the page →</div>' +
-      '</div>' +
-      '<span class="page-tag" style="left:24px;">★</span>');
+    const hl = s.highlights || { enabled: false, items: [] };
+    const items = (hl.items || []).slice(0, 2);
+    const b = resolveHighlight(items[1]);
+    return face('highlights-mag front',
+      magCoverHtml(b, {
+        kicker: '— ALSO FEATURED —',
+        badge: 'CURATOR\'S PICK',
+        pageNum: 'ii',
+        emptyLabel: 'second pick',
+        showEditorNote: true
+      })
+    );
   }
+
 
   function renderPotImage(pot) {
     return face('pot-image back',
