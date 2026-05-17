@@ -132,12 +132,22 @@
   }
   function magCoverHtml(h, opts) {
     opts = opts || {};
+    const num = opts.num || '01';
+    const headerHtml =
+      '<div class="hmg-header">' +
+        '<span class="hmg-header-rule"></span>' +
+        '<div class="hmg-header-text">' +
+          '<div class="hmg-label">★ FLAVOUR IN HIGHLIGHT ★</div>' +
+          '<div class="hmg-num">No. ' + esc(num) + (opts.numTotal ? ' / ' + esc(opts.numTotal) : '') + '</div>' +
+        '</div>' +
+        '<span class="hmg-header-rule"></span>' +
+      '</div>';
     if (!h) {
-      return (opts.masthead ? '<div class="hmg-masthead"><span class="hmg-rule"></span><span class="hmg-issue">' + esc(opts.masthead) + '</span><span class="hmg-rule"></span></div>' : '') +
+      return headerHtml +
         '<div class="hmg-empty">' +
           '<span class="hmg-empty-mark">✦</span>' +
-          '<p>Curating this month\'s ' + esc(opts.emptyLabel || 'pick') + '…</p>' +
-          '<small>Check back soon.</small>' +
+          '<p>Coming soon</p>' +
+          '<small>This slot is still being curated</small>' +
         '</div>' +
         '<span class="hmg-pagenum">' + esc(opts.pageNum || '') + '</span>';
     }
@@ -145,27 +155,13 @@
       '<span class="hmg-tag">' + esc(t) + '</span>').join('');
     const blurb = (h.tagline || h.description || '').trim();
     const blendUpper = (h.blendType || 'signature').toUpperCase();
-    const masthead = opts.masthead
-      ? '<div class="hmg-masthead">' +
-          '<span class="hmg-rule"></span>' +
-          '<span class="hmg-issue">' + esc(opts.masthead) + '</span>' +
-          '<span class="hmg-rule"></span>' +
-        '</div>'
-      : '<div class="hmg-rule-only"></div>';
     const badge = opts.badge
       ? '<div class="hmg-badge"><span class="hmg-badge-star">★</span> ' + esc(opts.badge) + '</div>'
       : '';
     const image = h.image
-      ? '<div class="hmg-image" style="background-image:url(\'' + esc(h.image) + '\')">' + badge + '<div class="hmg-image-corner"></div></div>'
+      ? '<div class="hmg-image" style="background-image:url(\'' + esc(h.image) + '\')">' + badge + '</div>'
       : '<div class="hmg-image hmg-image-fallback">' + badge + '<span>' + esc((h.name || '?').charAt(0).toUpperCase()) + '</span></div>';
-    const editorNote = opts.showEditorNote
-      ? '<div class="hmg-editor-note">' +
-          '<span class="hmg-ornament">✦ ✦ ✦</span>' +
-          '<p>"These are the two we\'ve been talking about all month. Order one — or both — and let your evening unfold."</p>' +
-          '<div class="hmg-signature">— The ' + esc(((DATA && DATA.settings && DATA.settings.brandName) || 'Smokzy')) + ' Curation</div>' +
-        '</div>'
-      : '';
-    return masthead +
+    return headerHtml +
       '<div class="hmg-frame">' + image + '</div>' +
       '<div class="hmg-body">' +
         '<div class="hmg-kicker">' + esc(opts.kicker || 'FEATURED') + '</div>' +
@@ -179,47 +175,42 @@
         (blurb ? '<p class="hmg-blurb"><span class="hmg-dropcap">' + esc(blurb.charAt(0)) + '</span>' + esc(blurb.slice(1)) + '</p>' : '') +
         (tags ? '<div class="hmg-tags">' + tags + '</div>' : '') +
         '<button class="hmg-cta" data-act="try-highlight" data-library-id="' + esc(h.libraryId) + '" type="button">' +
-          '<span class="hmg-cta-text">TAP TO TRY</span>' +
-          '<span class="hmg-cta-sub">' + esc(h.name.toUpperCase()) + '</span>' +
+          '<span class="hmg-cta-text">TAP TO TRY THIS</span>' +
           '<span class="hmg-arr">→</span>' +
         '</button>' +
       '</div>' +
-      editorNote +
       '<span class="hmg-pagenum">' + esc(opts.pageNum || '') + '</span>';
   }
   function renderHighlightsIntro() {
-    // LEFT page of the magazine spread — the headliner
+    // LEFT page of the spread — flavour #1
     const s = (DATA && DATA.settings) || {};
     const hl = s.highlights || { enabled: false, items: [] };
     const items = (hl.items || []).slice(0, 2);
     const a = resolveHighlight(items[0]);
     return face('highlights-mag back',
       magCoverHtml(a, {
-        masthead: ((s.brandName || 'SMOKZY').toUpperCase()) + ' MONTHLY · ISSUE ' + (new Date()).getFullYear(),
+        num: '01', numTotal: '02',
         kicker: '— THE HEADLINER —',
         badge: 'STAR OF THE MONTH',
-        pageNum: 'i',
-        emptyLabel: 'headliner'
+        pageNum: 'i'
       })
     );
   }
   function renderHighlightsLeaf() {
-    // RIGHT page of the magazine spread — the discovery + editor's note
+    // RIGHT page of the spread — flavour #2
     const s = (DATA && DATA.settings) || {};
     const hl = s.highlights || { enabled: false, items: [] };
     const items = (hl.items || []).slice(0, 2);
     const b = resolveHighlight(items[1]);
     return face('highlights-mag front',
       magCoverHtml(b, {
+        num: '02', numTotal: '02',
         kicker: '— ALSO FEATURED —',
-        badge: 'CURATOR\'S PICK',
-        pageNum: 'ii',
-        emptyLabel: 'second pick',
-        showEditorNote: true
+        badge: "CURATOR'S PICK",
+        pageNum: 'ii'
       })
     );
   }
-
 
   function renderPotImage(pot) {
     return face('pot-image back',
