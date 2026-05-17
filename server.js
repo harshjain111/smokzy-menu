@@ -83,7 +83,8 @@ app.get('/api/menu', async (req, res) => {
         logoUrl: settings.logoUrl || '', partnerName: settings.partnerName || '',
         partnerLogoUrl: settings.partnerLogoUrl || '',
         highlights: settings.highlights || { enabled: false, items: [] },
-        importedUpcharge: upcharge
+        importedUpcharge: upcharge,
+        pairingsEnabled: settings.pairingsEnabled !== false
       },
       cover: settings.cover || {}, founderNote: settings.founderNote || {},
       pots, pairings, library
@@ -186,7 +187,6 @@ if (require.main === module) {
   app.listen(PORT, () => {
     console.log('\n🌬  Smokzy menu running at  http://localhost:' + PORT);
     console.log('   Admin panel at            http://localhost:' + PORT + '/admin');
-    console.log('   Default admin password:   ' + ADMIN_PASSWORD);
     console.log('   Supabase:                 ' + (process.env.SUPABASE_URL || '⚠ NOT SET') + '\n');
   });
 }

@@ -823,6 +823,11 @@
 
   // ============ PAIRINGS ============
   function renderPairings() {
+    const toggle = document.getElementById('pairingsEnabled');
+    if (toggle) {
+      const s = (DATA && DATA.settings) || {};
+      toggle.checked = s.pairingsEnabled !== false;
+    }
     const wrap = $('#pairingList');
     if (!wrap) return;
     const items = (DATA && DATA.pairings) || [];
@@ -841,6 +846,23 @@
         '<button class="del-mini" data-act="del-pairing">Delete</button>' +
       '</div></div>').join('');
   }
+  // Pairings on/off toggle — saves immediately, no Save button.
+  document.addEventListener('change', async e => {
+    if (e.target.id !== 'pairingsEnabled') return;
+    const on = !!e.target.checked;
+    e.target.disabled = true;
+    try {
+      await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify({ pairingsEnabled: on }) });
+      if (DATA && DATA.settings) DATA.settings.pairingsEnabled = on;
+      flash(on ? 'Pairings page shown' : 'Pairings page hidden');
+    } catch (err) {
+      e.target.checked = !on;
+      alert('Save failed: ' + err.message);
+    } finally {
+      e.target.disabled = false;
+    }
+  });
+
   const addPairingBtn = $('#addPairing');
   if (addPairingBtn) addPairingBtn.addEventListener('click', async () => {
     try { await api('/api/admin/pairings', { method: 'POST', body: JSON.stringify({ drink: 'New drink', flavor: '', reason: '' }) }); refresh(); }
@@ -934,7 +956,6 @@
   }
   const resetBtn = $('#resetAnalytics');
   if (resetBtn) resetBtn.addEventListener('click', async () => {
-    if (!confirm('Reset all analytics counts? This cannot be undone.')) return;
     try { await api('/api/admin/analytics/reset', { method: 'POST' }); flash('Analytics reset'); loadDashboard(); }
     catch (err) { alert('Reset failed: ' + err.message); }
   });

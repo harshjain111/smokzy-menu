@@ -356,19 +356,25 @@
     const out = [];
     const pots = data.pots || [];
     const showHl = highlightsVisible(data);
+    const showPair = !data.settings || data.settings.pairingsEnabled !== false;
+    // when pairings are turned off, the "back" of the last pot becomes the
+    // feedback prompt directly instead of the pairings intro spread.
+    const tailBack = showPair ? renderPairingsIntro() : renderInBookFeedbackPrompt();
     let pageNum = 2;
     out.push({ front: renderCover(data.cover), back: renderFounderQuote() });
     if (showHl) {
       out.push({ front: renderFounderBody(data.founderNote), back: renderHighlightsIntro() });
-      out.push({ front: renderHighlightsLeaf(), back: pots[0] ? renderPotImage(pots[0]) : renderPairingsIntro() });
+      out.push({ front: renderHighlightsLeaf(), back: pots[0] ? renderPotImage(pots[0]) : tailBack });
     } else {
-      out.push({ front: renderFounderBody(data.founderNote), back: pots[0] ? renderPotImage(pots[0]) : renderPairingsIntro() });
+      out.push({ front: renderFounderBody(data.founderNote), back: pots[0] ? renderPotImage(pots[0]) : tailBack });
     }
     pots.forEach((pot, i) => {
       const next = pots[i + 1];
-      out.push({ front: renderPotFlavors(pot, ++pageNum), back: next ? renderPotImage(next) : renderPairingsIntro() });
+      out.push({ front: renderPotFlavors(pot, ++pageNum), back: next ? renderPotImage(next) : tailBack });
     });
-    out.push({ front: renderPairingsList(data.pairings), back: renderInBookFeedbackPrompt() });
+    if (showPair) {
+      out.push({ front: renderPairingsList(data.pairings), back: renderInBookFeedbackPrompt() });
+    }
     out.push({ front: renderThankYou(), back: renderBackCover() });
     return out;
   }
@@ -422,7 +428,9 @@
     const spreadNames = ['Cover', "Founder's note"];
     if (DATA && highlightsVisible(DATA)) spreadNames.push('Highlights');
     ((DATA && DATA.pots) || []).forEach(p => spreadNames.push(p.name));
-    spreadNames.push('Pairings', 'Feedback', 'Thank you');
+    const pairOn = !(DATA && DATA.settings) || DATA.settings.pairingsEnabled !== false;
+    if (pairOn) spreadNames.push('Pairings');
+    spreadNames.push('Feedback', 'Thank you');
     const lbl = $('#pageLabel');
     if (lbl) lbl.textContent = spreadNames[current] || ('Page ' + (current + 1));
     const hint = $('#hint');
@@ -706,7 +714,6 @@
       setTimeout(() => {
         const el = document.documentElement;
         const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-        if (req) { try { req.call(el); } catch (e) {} }
       }, 250);
     };
     window.addEventListener('click', goFs, { once: true });

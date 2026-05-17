@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Smokzy Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/admin.css?v=10">
+  <link rel="stylesheet" href="/css/admin.css?v=11">
 </head>
 <body>
   <!-- LOGIN -->
@@ -261,6 +261,13 @@
           <h2>Recommended pairings</h2>
           <button class="primary-btn" id="addPairing">+ Add pairing</button>
         </div>
+        <div class="card">
+          <label class="fb-recommend" style="margin:0;">
+            <input type="checkbox" id="pairingsEnabled">
+            Show the Pairings page in the customer menu
+          </label>
+          <p class="muted" style="margin:8px 0 0;">Uncheck to hide the entire pairings spread from the book. Useful if you don't want to show drink pairings at a venue, or while you're still curating them. Toggling this saves immediately — no need to refresh.</p>
+        </div>
         <div id="pairingList" class="pairing-list-admin"></div>
       </section>
 
@@ -315,7 +322,7 @@
             </div>
           </label>
           <label style="display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0;">
-            <input type="checkbox" name="popular" style="width:auto;">
+               <input type="checkbox" name="popular" style="width:auto;">
             Mark as popular (★)
           </label>
         </div>
@@ -328,6 +335,6 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=10"></script>
+  <script src="/js/admin.js?v=11"></script>
 </body>
 </html>
