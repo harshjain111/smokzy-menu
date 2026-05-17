@@ -115,6 +115,10 @@
           if (targetId === 'set_partnerLogoUrl' && DATA.settings) DATA.settings.partnerLogoUrl = j.url;
           if (targetId === 'cv_bg' && DATA.cover)                 DATA.cover.backgroundImage = j.url;
         }
+        // ---- AUTO-SAVE the upload to its owner record so the change can't be lost ----
+        // (Branding logos auto-save the whole settings; flavour/pot/library images
+        //  patch just their own row.)
+        let autosaved = false;
         if (targetId === 'set_logoUrl' || targetId === 'set_partnerLogoUrl') {
           await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify({
             brandName: document.getElementById('set_brandName').value,
@@ -123,8 +127,39 @@
             partnerName: document.getElementById('set_partnerName').value,
             partnerLogoUrl: document.getElementById('set_partnerLogoUrl').value
           })});
-          flash('Uploaded & saved ✓');
-        } else { flash('Uploaded ✓'); }
+          autosaved = true;
+        } else if (targetId.indexOf('lib_img_') === 0) {
+          const libId = targetId.slice('lib_img_'.length);
+          await api('/api/admin/library/' + libId, { method: 'PUT', body: JSON.stringify({ image: j.url }) });
+          if (DATA && DATA.library) {
+            const L = DATA.library.find(x => x.id === libId);
+            if (L) L.image = j.url;
+          }
+          autosaved = true;
+          await refresh();
+        } else if (targetId.indexOf('fl_img_') === 0) {
+          const flavorId = targetId.slice('fl_img_'.length);
+          // find the pot that owns this inline flavour
+          let owningPot = null;
+          ((DATA && DATA.pots) || []).forEach(p => {
+            if ((p.flavors || []).some(f => f.id === flavorId && f.source !== 'library')) owningPot = p;
+          });
+          if (owningPot) {
+            await api('/api/admin/pots/' + owningPot.id + '/flavors/' + flavorId, { method: 'PUT', body: JSON.stringify({ image: j.url }) });
+            const fl = (owningPot.flavors || []).find(f => f.id === flavorId);
+            if (fl) fl.image = j.url;
+            autosaved = true;
+            await refresh();
+          }
+        } else if (targetId.indexOf('pot_img_') === 0) {
+          const potId = targetId.slice('pot_img_'.length);
+          await api('/api/admin/pots/' + potId, { method: 'PUT', body: JSON.stringify({ image: j.url }) });
+          const p = ((DATA && DATA.pots) || []).find(x => x.id === potId);
+          if (p) p.image = j.url;
+          autosaved = true;
+          await refresh();
+        }
+        flash(autosaved ? 'Uploaded & saved ✓' : 'Uploaded ✓');
         renderSettings();
       } catch (err) { alert('Upload failed: ' + err.message); }
       finally { btn.disabled = false; btn.textContent = orig; }
